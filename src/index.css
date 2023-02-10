@@ -1,0 +1,34 @@
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  height: 100vh;
+  height: stretch;
+  height: -webkit-fill-available;
+}
+
+body {
+  min-height: 100vh;
+  min-height: stretch;
+  min-height: -webkit-fill-available;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+
+  overflow: hidden;
+  background-color: black;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+
+  flex: 1 1 auto;
+  max-width: 1000px;
+  width: 100%;
+}

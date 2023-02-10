@@ -1,0 +1,44 @@
+.card-container {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+
+.card {
+  width: 70px;
+  height: 100px;
+  transform-style: preserve-3d;
+}
+
+.card.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  backface-visibility: hidden;
+
+  border-radius: 10px;
+  text-align: center;
+  border: 2px solid black;
+}
+
+.card-face_front {
+  background: red;
+}
+
+.card-face_back {
+  background: blue;
+  transform: rotateY(180deg);
+}
+
+.card-shadow {
+  position: absolute;
+  background-color: black;
+  opacity: 0.3;
+  width: 70px;
+  height: 10px;
+  bottom: -20px;
+  border-radius: 70%;
+}
