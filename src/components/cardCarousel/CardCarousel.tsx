@@ -32,6 +32,11 @@ type CardCarouselProps = {
    * Difference in distance in pixels between the cards' highest and lowest positions
    */
   cardFloatingDelta: number;
+
+  /**
+   * Max FPS to render (not very accurate). The default is unlimited
+   */
+  maxFramerate?: number;
 };
 
 function CardCarousel({
@@ -41,6 +46,7 @@ function CardCarousel({
   manualRotateDistance,
   cardDistance,
   cardFloatingDelta,
+  maxFramerate,
 }: CardCarouselProps) {
   const [carousel, setCarousel] = useState<HTMLDivElement | null>();
   const cardsRef = useRef<(CardRef | null)[]>([]);
@@ -122,6 +128,9 @@ function CardCarousel({
       frameIdRef.current = requestAnimationFrame(tick);
 
       const delta = now - lastTimeRef.current;
+
+      if (maxFramerate && delta < 1000 / maxFramerate) return;
+
       lastTimeRef.current = now;
 
       let carouselDegree = lastCarouselDegreeRef.current;
@@ -180,6 +189,7 @@ function CardCarousel({
     numberOfCards,
     manualRotateDistance,
     cardFloatingDelta,
+    maxFramerate,
   ]);
 
   return (

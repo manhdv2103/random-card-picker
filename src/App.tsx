@@ -18,6 +18,7 @@ function App() {
             manualRotateDistance={1000}
             cardDistance={150}
             cardFloatingDelta={12}
+            maxFramerate={50} // Work best on my android
           />
         </div>
       </div>
