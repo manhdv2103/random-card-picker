@@ -13,10 +13,10 @@ function App() {
         <div id="scene">
           <CardCarousel
             interactionContainerRef={main}
-            numberOfCards={15}
+            numberOfCards={10}
             autoRotateSecond={12}
-            manualRotateDistance={3000}
-            cardDistance={200}
+            manualRotateDistance={1000}
+            cardDistance={150}
             cardFloatingDelta={12}
           />
         </div>
