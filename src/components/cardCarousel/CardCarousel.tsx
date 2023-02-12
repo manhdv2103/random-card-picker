@@ -41,6 +41,12 @@ type CardCarouselProps = {
   cardDistance: number;
 
   /**
+   * Make the card floating up and down
+   * @default true
+   */
+  cardFloating?: boolean;
+
+  /**
    * Difference in distance in pixels between the cards' highest and lowest positions
    */
   cardFloatingDelta: number;
@@ -64,6 +70,7 @@ function CardCarousel({
   manualRotate = true,
   manualRotateDistance,
   cardDistance,
+  cardFloating = true,
   cardFloatingDelta,
   cardFloatingTime,
   maxFramerate,
@@ -185,14 +192,17 @@ function CardCarousel({
           cardDegree + carouselDegree
         }deg)`;
 
-        const cardFloatingPhaseShift = Math.PI * (i % 2);
-        const cardFloatingHeight = Math.sin(
-          (now % cardFloatingTimeMs) * cardFloatingPeriod +
-            cardFloatingPhaseShift
-        );
-        card.style.transform = `translateY(${
-          cardFloatingHeight * halfCardFloatingDelta
-        }px)`;
+        let cardFloatingHeight = 0;
+        if (cardFloating) {
+          const cardFloatingPhaseShift = Math.PI * (i % 2);
+          cardFloatingHeight =
+            Math.sin(
+              (now % cardFloatingTimeMs) * cardFloatingPeriod +
+                cardFloatingPhaseShift
+            ) * halfCardFloatingDelta;
+        }
+
+        card.style.transform = `translateY(${cardFloatingHeight}px)`;
 
         // TODO: update card shadow scaling to fit with the card's current height
         // cardShadow.style.transform = `scale(${
@@ -217,6 +227,7 @@ function CardCarousel({
     autoRotate,
     cardFloatingTime,
     autoRotateTime,
+    cardFloating,
   ]);
 
   return (
