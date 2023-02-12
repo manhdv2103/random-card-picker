@@ -62,6 +62,8 @@ type CardCarouselProps = {
   maxFramerate?: number;
 };
 
+type Cursor = { x: number; y: number; pressed: boolean };
+
 function CardCarousel({
   interactionContainerRef,
   numberOfCards,
@@ -80,9 +82,8 @@ function CardCarousel({
   const frameIdRef = useRef<number | null>();
   const lastTimeRef = useRef<number>(0);
   const lastCarouselDegreeRef = useRef<number>(0);
-  const isTouchRef = useRef<boolean>(false);
-  const cursorRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const lastCursorRef = useRef<{ x: number; y: number } | null>(null);
+  const cursorRef = useRef<Cursor>({ x: 0, y: 0, pressed: false });
+  const lastCursorRef = useRef<Cursor | null>(null);
 
   const handleCarousel = useCallback(
     (el: HTMLDivElement) => setCarousel(el),
@@ -101,25 +102,30 @@ function CardCarousel({
     if (!interactionContainerRef) return;
 
     const handleMouseDown = (e: MouseEvent) => {
-      isTouchRef.current = true;
-      cursorRef.current = { x: e.clientX, y: e.clientY };
+      cursorRef.current = { x: e.clientX, y: e.clientY, pressed: true };
+      console.log(e);
     };
     const handleTouch = (e: TouchEvent) => {
-      isTouchRef.current = true;
       cursorRef.current = {
         x: e.changedTouches[0].clientX,
         y: e.changedTouches[0].clientY,
+        pressed: true,
       };
     };
     const handleMouseMove = (e: MouseEvent) =>
-      (cursorRef.current = { x: e.clientX, y: e.clientY });
+      (cursorRef.current = {
+        ...cursorRef.current,
+        x: e.clientX,
+        y: e.clientY,
+      });
     const handleTouchMove = (e: TouchEvent) =>
       (cursorRef.current = {
+        ...cursorRef.current,
         x: e.changedTouches[0].clientX,
         y: e.changedTouches[0].clientY,
       });
     const handleUntouch = () => {
-      isTouchRef.current = false;
+      cursorRef.current = { ...cursorRef.current, pressed: false };
       lastCursorRef.current = null;
     };
 
@@ -159,7 +165,7 @@ function CardCarousel({
       lastTimeRef.current = now;
 
       let carouselDegree = lastCarouselDegreeRef.current;
-      if (!isTouchRef.current) {
+      if (!cursorRef.current.pressed) {
         if (autoRotate) {
           carouselDegree = mod(
             lastCarouselDegreeRef.current + carouselDegreePerMs * delta,
