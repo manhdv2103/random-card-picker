@@ -57,12 +57,28 @@ type CardCarouselProps = {
   cardFloatingTime: number;
 
   /**
+   * Allow the nearest card to snap (face straight toward the screen)
+   * @default false
+   */
+  cardSnapping?: boolean;
+
+  /**
+   * Time in seconds to finish 1 hypothetical round of rotation used when the card is snapping
+   */
+  cardSnappingTime: number;
+
+  /**
    * Max FPS to render (not very accurate). The default is unlimited
    */
   maxFramerate?: number;
 };
 
 type Cursor = { x: number; y: number; pressed: boolean };
+
+type Snapping = {
+  state: "pre_snapping" | "snapping" | "done_snapping";
+  goal: number;
+};
 
 function CardCarousel({
   interactionContainerRef,
@@ -75,15 +91,21 @@ function CardCarousel({
   cardFloating = true,
   cardFloatingDelta,
   cardFloatingTime,
+  cardSnapping,
+  cardSnappingTime,
   maxFramerate,
 }: CardCarouselProps) {
   const [carousel, setCarousel] = useState<HTMLDivElement | null>();
   const cardsRef = useRef<(CardRef | null)[]>([]);
+
   const frameIdRef = useRef<number | null>();
   const lastTimeRef = useRef<number>(0);
   const lastCarouselDegreeRef = useRef<number>(0);
+
   const cursorRef = useRef<Cursor>({ x: 0, y: 0, pressed: false });
   const lastCursorRef = useRef<Cursor | null>(null);
+
+  const snappingRef = useRef<Snapping>({ state: "pre_snapping", goal: 0 });
 
   const handleCarousel = useCallback(
     (el: HTMLDivElement) => setCarousel(el),
@@ -103,7 +125,6 @@ function CardCarousel({
 
     const handleMouseDown = (e: MouseEvent) => {
       cursorRef.current = { x: e.clientX, y: e.clientY, pressed: true };
-      console.log(e);
     };
     const handleTouch = (e: TouchEvent) => {
       cursorRef.current = {
@@ -154,6 +175,7 @@ function CardCarousel({
     const cardFloatingTimeMs = cardFloatingTime * 1000;
     const cardFloatingPeriod = (2 * Math.PI) / cardFloatingTimeMs;
     const halfCardFloatingDelta = cardFloatingDelta / 2;
+    const carouselSnappingDegreePerMs = 360 / (cardSnappingTime * 1000);
 
     const tick: FrameRequestCallback = now => {
       frameIdRef.current = requestAnimationFrame(tick);
@@ -171,6 +193,37 @@ function CardCarousel({
             lastCarouselDegreeRef.current + carouselDegreePerMs * delta,
             360
           );
+        } else if (cardSnapping) {
+          const snappingState = snappingRef.current.state;
+          if (snappingState !== "done_snapping") {
+            let snappingGoal = snappingRef.current.goal;
+            if (snappingState === "pre_snapping") {
+              snappingGoal =
+                Math.round(carouselDegree / cardSingleAngle) * cardSingleAngle;
+              snappingRef.current = {
+                state: "snapping",
+                goal: snappingGoal,
+              };
+            }
+
+            const goalDistance = snappingGoal - carouselDegree;
+            const carouselSnappingDegree = carouselSnappingDegreePerMs * delta;
+
+            if (Math.abs(goalDistance) >= carouselSnappingDegree) {
+              carouselDegree = mod(
+                lastCarouselDegreeRef.current +
+                  Math.sign(goalDistance) * carouselSnappingDegree,
+                360
+              );
+            } else {
+              carouselDegree = mod(
+                lastCarouselDegreeRef.current + goalDistance,
+                360
+              );
+
+              snappingRef.current.state = "done_snapping";
+            }
+          }
         }
       } else if (manualRotate) {
         const cursorDelta = lastCursorRef.current
@@ -183,6 +236,9 @@ function CardCarousel({
             (cursorDelta * 360) / manualRotateDistance,
           360
         );
+
+        // prepare for card snapping
+        if (cardSnapping) snappingRef.current.state = "pre_snapping";
       }
 
       lastCarouselDegreeRef.current = carouselDegree;
@@ -234,6 +290,8 @@ function CardCarousel({
     cardFloatingTime,
     autoRotateTime,
     cardFloating,
+    cardSnappingTime,
+    cardSnapping,
   ]);
 
   return (
