@@ -14,9 +14,21 @@ type CardCarouselProps = {
   numberOfCards: number;
 
   /**
+   * Auto rotate the carousel when there's no interaction
+   * @default true
+   */
+  autoRotate?: boolean;
+
+  /**
    * Number of seconds to finish 1 round of rotation in auto rotation mode
    */
   autoRotateSecond: number;
+
+  /**
+   * Allow using mouse or finger to move the carousel
+   * @default true
+   */
+  manualRotate?: boolean;
 
   /**
    * Distance in pixels required to drag the carousel (by mouse, hand, etc.) for it to finish 1 round of rotation in manual rotation mode
@@ -42,7 +54,9 @@ type CardCarouselProps = {
 function CardCarousel({
   interactionContainerRef,
   numberOfCards,
+  autoRotate = true,
   autoRotateSecond,
+  manualRotate = true,
   manualRotateDistance,
   cardDistance,
   cardFloatingDelta,
@@ -135,11 +149,13 @@ function CardCarousel({
 
       let carouselDegree = lastCarouselDegreeRef.current;
       if (!isTouchRef.current) {
-        carouselDegree = mod(
-          lastCarouselDegreeRef.current + carouselDegreePerMs * delta,
-          360
-        );
-      } else {
+        if (autoRotate) {
+          carouselDegree = mod(
+            lastCarouselDegreeRef.current + carouselDegreePerMs * delta,
+            360
+          );
+        }
+      } else if (manualRotate) {
         const cursorDelta = lastCursorRef.current
           ? cursorRef.current.x - lastCursorRef.current.x
           : 0;
@@ -190,6 +206,8 @@ function CardCarousel({
     manualRotateDistance,
     cardFloatingDelta,
     maxFramerate,
+    manualRotate,
+    autoRotate,
   ]);
 
   return (
