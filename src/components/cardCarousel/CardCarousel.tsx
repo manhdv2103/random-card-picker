@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Card, { CardRef } from "../card/Card";
 import "./CardCarousel.css";
 
@@ -20,9 +20,9 @@ type CardCarouselProps = {
   autoRotate?: boolean;
 
   /**
-   * Number of seconds to finish 1 round of rotation in auto rotation mode
+   * Time in seconds to finish 1 round of rotation in auto rotation mode
    */
-  autoRotateSecond: number;
+  autoRotateTime: number;
 
   /**
    * Allow using mouse or finger to move the carousel
@@ -46,6 +46,11 @@ type CardCarouselProps = {
   cardFloatingDelta: number;
 
   /**
+   * Time in seconds for the card to finish a floating routine
+   */
+  cardFloatingTime: number;
+
+  /**
    * Max FPS to render (not very accurate). The default is unlimited
    */
   maxFramerate?: number;
@@ -55,11 +60,12 @@ function CardCarousel({
   interactionContainerRef,
   numberOfCards,
   autoRotate = true,
-  autoRotateSecond,
+  autoRotateTime,
   manualRotate = true,
   manualRotateDistance,
   cardDistance,
   cardFloatingDelta,
+  cardFloatingTime,
   maxFramerate,
 }: CardCarouselProps) {
   const [carousel, setCarousel] = useState<HTMLDivElement | null>();
@@ -70,11 +76,6 @@ function CardCarousel({
   const isTouchRef = useRef<boolean>(false);
   const cursorRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const lastCursorRef = useRef<{ x: number; y: number } | null>(null);
-
-  const carouselDegreePerMs = useMemo(
-    () => 360 / (autoRotateSecond * 1000),
-    [autoRotateSecond]
-  );
 
   const handleCarousel = useCallback(
     (el: HTMLDivElement) => setCarousel(el),
@@ -110,7 +111,6 @@ function CardCarousel({
         x: e.changedTouches[0].clientX,
         y: e.changedTouches[0].clientY,
       });
-
     const handleUntouch = () => {
       isTouchRef.current = false;
       lastCursorRef.current = null;
@@ -136,7 +136,11 @@ function CardCarousel({
   useEffect(() => {
     if (!carousel || !cardsRef.current.length) return;
 
+    const carouselDegreePerMs = 360 / (autoRotateTime * 1000);
     const cardSingleAngle = 360 / numberOfCards;
+    const cardFloatingTimeMs = cardFloatingTime * 1000;
+    const cardFloatingPeriod = (2 * Math.PI) / cardFloatingTimeMs;
+    const halfCardFloatingDelta = cardFloatingDelta / 2;
 
     const tick: FrameRequestCallback = now => {
       frameIdRef.current = requestAnimationFrame(tick);
@@ -175,15 +179,19 @@ function CardCarousel({
         if (!cardRef?.cardContainer || !cardRef?.card || !cardRef?.cardShadow)
           return;
         const { cardContainer, card } = cardRef;
+
         const cardDegree = cardSingleAngle * i;
         cardContainer.style.transform = `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${
           cardDegree + carouselDegree
         }deg)`;
+
+        const cardFloatingPhaseShift = Math.PI * (i % 2);
         const cardFloatingHeight = Math.sin(
-          ((carouselDegree + (i % 2 === 0 ? 180 : 0)) % 360) * (Math.PI / 360)
+          (now % cardFloatingTimeMs) * cardFloatingPeriod +
+            cardFloatingPhaseShift
         );
         card.style.transform = `translateY(${
-          -(cardFloatingHeight - 0.5) * cardFloatingDelta
+          cardFloatingHeight * halfCardFloatingDelta
         }px)`;
 
         // TODO: update card shadow scaling to fit with the card's current height
@@ -199,7 +207,6 @@ function CardCarousel({
     };
   }, [
     carousel,
-    carouselDegreePerMs,
     cardDistance,
     interactionContainerRef,
     numberOfCards,
@@ -208,6 +215,8 @@ function CardCarousel({
     maxFramerate,
     manualRotate,
     autoRotate,
+    cardFloatingTime,
+    autoRotateTime,
   ]);
 
   return (
