@@ -123,44 +123,38 @@ function CardCarousel({
   useEffect(() => {
     if (!interactionContainerRef) return;
 
-    const handleMouseDown = (e: MouseEvent) => {
-      cursorRef.current = { x: e.clientX, y: e.clientY, pressed: true };
-    };
-    const handleTouch = (e: TouchEvent) => {
+    const handleTouch = (e: MouseEvent | TouchEvent) => {
+      const touchPoint = "changedTouches" in e ? e.changedTouches[0] : e;
       cursorRef.current = {
-        x: e.changedTouches[0].clientX,
-        y: e.changedTouches[0].clientY,
+        x: touchPoint.clientX,
+        y: touchPoint.clientY,
         pressed: true,
       };
     };
-    const handleMouseMove = (e: MouseEvent) =>
-      (cursorRef.current = {
+    const handleTouchMove = (e: MouseEvent | TouchEvent) => {
+      const touchPoint = "changedTouches" in e ? e.changedTouches[0] : e;
+      cursorRef.current = {
         ...cursorRef.current,
-        x: e.clientX,
-        y: e.clientY,
-      });
-    const handleTouchMove = (e: TouchEvent) =>
-      (cursorRef.current = {
-        ...cursorRef.current,
-        x: e.changedTouches[0].clientX,
-        y: e.changedTouches[0].clientY,
-      });
+        x: touchPoint.clientX,
+        y: touchPoint.clientY,
+      };
+    };
     const handleUntouch = () => {
       cursorRef.current = { ...cursorRef.current, pressed: false };
       lastCursorRef.current = null;
     };
 
-    interactionContainerRef.addEventListener("mousedown", handleMouseDown);
+    interactionContainerRef.addEventListener("mousedown", handleTouch);
     interactionContainerRef.addEventListener("touchstart", handleTouch);
-    interactionContainerRef.addEventListener("mousemove", handleMouseMove);
+    interactionContainerRef.addEventListener("mousemove", handleTouchMove);
     interactionContainerRef.addEventListener("touchmove", handleTouchMove);
     interactionContainerRef.addEventListener("mouseup", handleUntouch);
     interactionContainerRef.addEventListener("touchend", handleUntouch);
 
     return () => {
-      interactionContainerRef.removeEventListener("mousedown", handleMouseDown);
+      interactionContainerRef.removeEventListener("mousedown", handleTouch);
       interactionContainerRef.removeEventListener("touchstart", handleTouch);
-      interactionContainerRef.removeEventListener("mousemove", handleMouseMove);
+      interactionContainerRef.removeEventListener("mousemove", handleTouchMove);
       interactionContainerRef.removeEventListener("touchmove", handleTouchMove);
       interactionContainerRef.removeEventListener("mouseup", handleUntouch);
       interactionContainerRef.removeEventListener("touchend", handleUntouch);
