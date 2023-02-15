@@ -38,7 +38,8 @@
   background-color: black;
   opacity: 0.3;
   width: 70px;
-  height: 10px;
-  bottom: -20px;
+  height: 18px;
+  bottom: -25px;
   border-radius: 70%;
+  transform: rotateX(90deg);
 }
