@@ -78,6 +78,17 @@ type Cursor = { x: number; y: number; pressed: boolean };
 type Snapping = {
   state: "pre_snapping" | "snapping" | "done_snapping";
   goal: number;
+  selectedCard?: CardRef | null;
+};
+
+type Reveal = {
+  revealId: number | undefined;
+  cardRevealAnimations: Animation[];
+};
+
+type Click = {
+  downCursor: Cursor | null;
+  clicked: boolean;
 };
 
 function CardCarousel({
@@ -104,8 +115,13 @@ function CardCarousel({
 
   const cursorRef = useRef<Cursor>({ x: 0, y: 0, pressed: false });
   const lastCursorRef = useRef<Cursor | null>(null);
+  const clickRef = useRef<Click>({ downCursor: null, clicked: false });
 
   const snappingRef = useRef<Snapping>({ state: "pre_snapping", goal: 0 });
+  const revealRef = useRef<Reveal>({
+    revealId: undefined,
+    cardRevealAnimations: [],
+  });
 
   const handleCarousel = useCallback(
     (el: HTMLDivElement) => setCarousel(el),
@@ -130,6 +146,8 @@ function CardCarousel({
         y: touchPoint.clientY,
         pressed: true,
       };
+
+      clickRef.current.downCursor = cursorRef.current;
     };
     const handleTouchMove = (e: MouseEvent | TouchEvent) => {
       const touchPoint = "changedTouches" in e ? e.changedTouches[0] : e;
@@ -182,7 +200,53 @@ function CardCarousel({
 
       let carouselDegree = lastCarouselDegreeRef.current;
       if (!cursorRef.current.pressed) {
-        if (autoRotate) {
+        if (clickRef.current.clicked) {
+          const selectedCard = snappingRef.current.selectedCard;
+
+          if (selectedCard) {
+            const cardRevealAnimations = revealRef.current.cardRevealAnimations;
+            if (revealRef.current.revealId === undefined) {
+              const selectedId = selectedCard?.getId();
+              revealRef.current.revealId = selectedId;
+
+              const cardAngle = cardSingleAngle * selectedId;
+              const cardContainerAnimation =
+                selectedCard.cardContainer?.animate(
+                  [
+                    {
+                      transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
+                    },
+                  ],
+                  {
+                    duration: 500,
+                    fill: "forwards",
+                    easing: "ease-in",
+                  }
+                );
+              const cardAnimation = selectedCard?.card?.animate(
+                [
+                  {
+                    transform: "translateY(0px)",
+                  },
+                ],
+                {
+                  duration: 500,
+                  fill: "forwards",
+                  easing: "ease-in",
+                }
+              );
+
+              cardRevealAnimations.splice(0, cardRevealAnimations.length);
+              if (cardContainerAnimation)
+                cardRevealAnimations.push(cardContainerAnimation);
+              if (cardAnimation) cardRevealAnimations.push(cardAnimation);
+            } else {
+              cardRevealAnimations.forEach(animation => animation.reverse());
+              revealRef.current.revealId = undefined;
+            }
+          }
+          clickRef.current.clicked = false;
+        } else if (autoRotate) {
           carouselDegree = mod(
             lastCarouselDegreeRef.current + carouselDegreePerMs * delta,
             360
@@ -215,32 +279,57 @@ function CardCarousel({
                 360
               );
 
-              snappingRef.current.state = "done_snapping";
+              snappingRef.current = {
+                ...snappingRef.current,
+                state: "done_snapping",
+                selectedCard:
+                  cardsRef.current[
+                    (numberOfCards -
+                      snappingRef.current.goal / (360 / numberOfCards)) %
+                      numberOfCards
+                  ],
+              };
             }
           }
         }
       } else if (manualRotate) {
-        const cursorDelta = lastCursorRef.current
-          ? cursorRef.current.x - lastCursorRef.current.x
-          : 0;
-        lastCursorRef.current = cursorRef.current;
+        const downCursor = clickRef.current.downCursor;
 
-        carouselDegree = mod(
-          lastCarouselDegreeRef.current +
-            (cursorDelta * 360) / manualRotateDistance,
-          360
-        );
+        if (
+          downCursor &&
+          Math.abs(downCursor.x - cursorRef.current.x) < 2 &&
+          Math.abs(downCursor.y - cursorRef.current.y) < 2
+        ) {
+          clickRef.current.clicked = true;
+        } else {
+          clickRef.current.clicked = false;
 
-        // prepare for card snapping
-        if (cardSnapping) snappingRef.current.state = "pre_snapping";
+          if (revealRef.current.revealId === undefined) {
+            const cursorDelta = lastCursorRef.current
+              ? cursorRef.current.x - lastCursorRef.current.x
+              : 0;
+            lastCursorRef.current = cursorRef.current;
+
+            carouselDegree = mod(
+              lastCarouselDegreeRef.current +
+                (cursorDelta * 360) / manualRotateDistance,
+              360
+            );
+
+            // prepare for card snapping
+            if (cardSnapping) snappingRef.current.state = "pre_snapping";
+          }
+        }
       }
 
       lastCarouselDegreeRef.current = carouselDegree;
       carousel.style.transform = `rotateY(${carouselDegree}deg)`;
 
       cardsRef.current.forEach((cardRef, i) => {
+        if (revealRef.current.revealId === i) return;
         if (!cardRef?.cardContainer || !cardRef?.card || !cardRef?.cardShadow)
           return;
+
         const { cardContainer, card } = cardRef;
 
         const cardDegree = cardSingleAngle * i;
@@ -293,7 +382,7 @@ function CardCarousel({
       {Array(numberOfCards)
         .fill(null) // placeholder
         .map((_, i) => (
-          <Card key={i} ref={el => handleCard(el, i)} content={i + ""} />
+          <Card key={i} id={i} ref={el => handleCard(el, i)} content={i + ""} />
         ))}
     </div>
   );
