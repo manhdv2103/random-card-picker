@@ -9,10 +9,6 @@
   transform-style: preserve-3d;
 }
 
-.card.is-flipped {
-  transform: rotateY(180deg);
-}
-
 .card-face {
   height: 100%;
   width: 100%;
@@ -34,12 +30,9 @@
 }
 
 .card-shadow {
-  position: absolute;
   background-color: black;
   opacity: 0.3;
-  width: 70px;
-  height: 18px;
-  bottom: -25px;
+  height: 10px;
   border-radius: 70%;
-  transform: rotateX(90deg);
+  transform: rotateX(90deg) translateZ(-10px);
 }

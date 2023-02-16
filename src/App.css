@@ -19,6 +19,7 @@ header {
   perspective-origin: center -50px;
   top: -50px;
   user-select: none;
+  pointer-events: none;
 }
 
 #controller {
