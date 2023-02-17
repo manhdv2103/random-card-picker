@@ -179,6 +179,8 @@ function CardCarousel({
     };
   }, [interactionContainerRef]);
 
+  // Main logic
+
   useEffect(() => {
     if (!carousel || !cardsRef.current.length) return;
 
@@ -324,6 +326,8 @@ function CardCarousel({
 
       lastCarouselDegreeRef.current = carouselDegree;
       carousel.style.transform = `rotateY(${carouselDegree}deg)`;
+
+      // Render cards
 
       cardsRef.current.forEach((cardRef, i) => {
         if (revealRef.current.revealId === i) return;
