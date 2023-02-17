@@ -1,10 +1,24 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import CardCarousel from "./components/cardCarousel/CardCarousel";
+
+const MAX_CARD_DISTANCE = 200;
 
 function App() {
   const [main, setMain] = useState<HTMLDivElement | null>(null);
   const handleMain = useCallback((el: HTMLDivElement) => setMain(el), []);
+  const [cardDistance, setCardDistance] = useState(
+    Math.min(MAX_CARD_DISTANCE, window.innerWidth / 3)
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setCardDistance(Math.min(MAX_CARD_DISTANCE, window.innerWidth / 3));
+    };
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  });
 
   return (
     <>
@@ -17,7 +31,7 @@ function App() {
             autoRotate={false}
             autoRotateTime={12}
             manualRotateDistance={1000}
-            cardDistance={150}
+            cardDistance={cardDistance}
             cardFloatingDelta={12}
             cardFloatingTime={3}
             cardSnapping
