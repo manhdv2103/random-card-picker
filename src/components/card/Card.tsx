@@ -26,7 +26,7 @@ const Card = forwardRef<CardRef, CardProps>(({ id, content }, ref) => {
   }));
 
   return (
-    <div ref={cardContainerRef} className="card-container">
+    <div ref={cardContainerRef} className="card-container" data-id={id}>
       <div ref={cardRef} className="card">
         <div className="card-face card-face_front">front {content}</div>
         <div className="card-face card-face_back">back {content}</div>
@@ -37,3 +37,8 @@ const Card = forwardRef<CardRef, CardProps>(({ id, content }, ref) => {
 });
 
 export default Card;
+
+export const extractCardId = (el: Element): number | undefined => {
+  const card = el.closest("[data-id]");
+  return card instanceof HTMLElement ? Number(card.dataset["id"]) : undefined;
+};

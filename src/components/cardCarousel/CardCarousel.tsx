@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import Card, { CardRef } from "../card/Card";
+import Card, { CardRef, extractCardId } from "../card/Card";
 import "./CardCarousel.css";
 
 type CardCarouselProps = {
@@ -78,7 +78,7 @@ type Cursor = { x: number; y: number; pressed: boolean };
 type Snapping = {
   state: "pre_snapping" | "snapping" | "done_snapping";
   goal: number;
-  selectedCard?: CardRef | null;
+  snappedCard?: CardRef | null;
 };
 
 type Reveal = {
@@ -89,6 +89,7 @@ type Reveal = {
 type Click = {
   downCursor: Cursor | null;
   clicked: boolean;
+  clickedCardId?: number;
 };
 
 function CardCarousel({
@@ -148,6 +149,10 @@ function CardCarousel({
       };
 
       clickRef.current.downCursor = cursorRef.current;
+
+      if (e.target instanceof Element) {
+        clickRef.current.clickedCardId = extractCardId(e.target);
+      }
     };
     const handleTouchMove = (e: MouseEvent | TouchEvent) => {
       const touchPoint = "changedTouches" in e ? e.changedTouches[0] : e;
@@ -203,49 +208,74 @@ function CardCarousel({
       let carouselDegree = lastCarouselDegreeRef.current;
       if (!cursorRef.current.pressed) {
         if (clickRef.current.clicked) {
-          const selectedCard = snappingRef.current.selectedCard;
+          const cardRevealAnimations = revealRef.current.cardRevealAnimations;
+          if (revealRef.current.revealId === undefined) {
+            if (
+              snappingRef.current.snappedCard &&
+              clickRef.current.clickedCardId !== undefined
+            ) {
+              const snappedCard = snappingRef.current.snappedCard;
+              const centerCardId = snappedCard.getId();
+              const clickedCardId = clickRef.current.clickedCardId;
 
-          if (selectedCard) {
-            const cardRevealAnimations = revealRef.current.cardRevealAnimations;
-            if (revealRef.current.revealId === undefined) {
-              const selectedId = selectedCard?.getId();
-              revealRef.current.revealId = selectedId;
+              // Only allow to reveal 3 cards nearest to the screen
+              if (
+                clickedCardId === centerCardId ||
+                clickedCardId === mod(centerCardId - 1, numberOfCards) ||
+                clickedCardId === mod(centerCardId + 1, numberOfCards)
+              ) {
+                const selectedCard = cardsRef.current.find(
+                  card => card?.getId() === clickedCardId
+                );
 
-              const cardAngle = cardSingleAngle * selectedId;
-              const cardContainerAnimation =
-                selectedCard.cardContainer?.animate(
+                revealRef.current.revealId = clickedCardId;
+
+                // Find the nearest path for the selected card to travel to the front
+                const centerCardIdAlternate =
+                  Math.sign(centerCardId - clickedCardId) *
+                  (centerCardId - numberOfCards);
+                const cardAngle =
+                  cardSingleAngle *
+                  (Math.abs(clickedCardId - centerCardId) <=
+                  Math.abs(clickedCardId - centerCardIdAlternate)
+                    ? centerCardId
+                    : centerCardIdAlternate);
+
+                const cardContainerAnimation =
+                  selectedCard?.cardContainer?.animate(
+                    [
+                      {
+                        transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
+                      },
+                    ],
+                    {
+                      duration: 500,
+                      fill: "forwards",
+                      easing: "ease-in-out",
+                    }
+                  );
+                const cardAnimation = selectedCard?.card?.animate(
                   [
                     {
-                      transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
+                      transform: "translateY(0px)",
                     },
                   ],
                   {
                     duration: 500,
                     fill: "forwards",
-                    easing: "ease-in",
+                    easing: "ease-in-out",
                   }
                 );
-              const cardAnimation = selectedCard?.card?.animate(
-                [
-                  {
-                    transform: "translateY(0px)",
-                  },
-                ],
-                {
-                  duration: 500,
-                  fill: "forwards",
-                  easing: "ease-in",
-                }
-              );
 
-              cardRevealAnimations.splice(0, cardRevealAnimations.length);
-              if (cardContainerAnimation)
-                cardRevealAnimations.push(cardContainerAnimation);
-              if (cardAnimation) cardRevealAnimations.push(cardAnimation);
-            } else {
-              cardRevealAnimations.forEach(animation => animation.reverse());
-              revealRef.current.revealId = undefined;
+                cardRevealAnimations.splice(0, cardRevealAnimations.length);
+                if (cardContainerAnimation)
+                  cardRevealAnimations.push(cardContainerAnimation);
+                if (cardAnimation) cardRevealAnimations.push(cardAnimation);
+              }
             }
+          } else {
+            cardRevealAnimations.forEach(animation => animation.reverse());
+            revealRef.current.revealId = undefined;
           }
           clickRef.current.clicked = false;
         } else if (autoRotate) {
@@ -284,7 +314,7 @@ function CardCarousel({
               snappingRef.current = {
                 ...snappingRef.current,
                 state: "done_snapping",
-                selectedCard:
+                snappedCard:
                   cardsRef.current[
                     (numberOfCards -
                       snappingRef.current.goal / (360 / numberOfCards)) %
