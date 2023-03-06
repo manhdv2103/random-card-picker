@@ -77,6 +77,7 @@ type Snapping = {
 };
 
 type Reveal = {
+  state: "pre_revealing" | "revealing" | "done_revealing";
   revealId: number | undefined;
   cardRevealAnimations: Animation[];
 };
@@ -114,6 +115,7 @@ function CardCarousel({
 
   const snappingRef = useRef<Snapping>({ state: "pre_snapping", goal: 0 });
   const revealRef = useRef<Reveal>({
+    state: "pre_revealing",
     revealId: undefined,
     cardRevealAnimations: [],
   });
@@ -210,17 +212,20 @@ function CardCarousel({
               const clickedCardId = clickRef.current.clickedCardId;
 
               // FIXME: handle card reveal when snapping is disabled
+              // FIXME: reveal card in wrong direction if the mouse is out of the window when dragging the carousel
               // Only allow to reveal 3 cards nearest to the screen
               if (
-                clickedCardId === centerCardId ||
-                clickedCardId === mod(centerCardId - 1, numberOfCards) ||
-                clickedCardId === mod(centerCardId + 1, numberOfCards)
+                revealRef.current.state === "pre_revealing" &&
+                (clickedCardId === centerCardId ||
+                  clickedCardId === mod(centerCardId - 1, numberOfCards) ||
+                  clickedCardId === mod(centerCardId + 1, numberOfCards))
               ) {
                 const selectedCard = cardsRef.current.find(
                   card => card?.getId() === clickedCardId
                 );
 
                 revealRef.current.revealId = clickedCardId;
+                revealRef.current.state = "revealing";
 
                 // Find the nearest path for the selected card to travel to the front
                 const centerCardIdAlternate =
@@ -279,10 +284,19 @@ function CardCarousel({
                 if (cardAnimation) cardRevealAnimations.push(cardAnimation);
                 if (cardShadowAnimation)
                   cardRevealAnimations.push(cardShadowAnimation);
+
+                cardRevealAnimations.forEach(animation => {
+                  animation.onfinish = () =>
+                    (revealRef.current.state = "done_revealing");
+                });
               }
             }
-          } else {
-            cardRevealAnimations.forEach(animation => animation.reverse());
+          } else if (revealRef.current.state === "done_revealing") {
+            cardRevealAnimations.forEach(animation => {
+              animation.reverse();
+              animation.onfinish = () =>
+                (revealRef.current.state = "pre_revealing");
+            });
             revealRef.current.revealId = undefined;
           }
           clickRef.current.clicked = false;
