@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Card, { extractCardId } from "../card";
 import { CardRef } from "../card/props";
+import backImg from "./../../assets/back.png";
+import frontImg from "./../../assets/front.png";
 import {
   CardCarouselProps,
   Click,
@@ -388,7 +390,8 @@ function CardCarousel({
             key={i}
             id={i}
             ref={el => handleCard(el, i)}
-            content={i + ""}
+            frontImage={frontImg}
+            backImage={backImg}
             {...cardProps}
           />
         ))}

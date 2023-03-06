@@ -4,7 +4,7 @@
 }
 
 .card {
-  width: 70px;
+  width: 60px;
   height: 100px;
   transform-style: preserve-3d;
 }
@@ -17,15 +17,14 @@
 
   border-radius: 10px;
   text-align: center;
-  border: 2px solid black;
 }
 
-.card-face_back {
-  background: red;
+.card-face > img {
+  width: 100%;
+  height: 100%;
 }
 
 .card-face_front {
-  background: blue;
   transform: rotateY(180deg);
 }
 

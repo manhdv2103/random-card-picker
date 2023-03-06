@@ -21,9 +21,26 @@ export type ConfigCardProps = {
    * Time in seconds for the card to finish a floating routine (low -> high -> low)
    */
   cardFloatingTime: number;
+
+  /**
+   * Size of the card
+   */
+  size?: { width: number; height: number };
 };
 
 export interface CardProps extends ConfigCardProps {
+  /**
+   * Id of the card
+   */
   id: number;
-  content?: string;
+
+  /**
+   * Back image for the card
+   */
+  backImage?: string;
+
+  /**
+   * Front image for the card
+   */
+  frontImage?: string;
 }

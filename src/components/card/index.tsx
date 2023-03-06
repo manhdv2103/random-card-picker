@@ -4,7 +4,15 @@ import "./styles.css";
 
 const Card = forwardRef<CardRef, CardProps>(
   (
-    { id, content, cardFloating = true, cardFloatingDelta, cardFloatingTime },
+    {
+      id,
+      cardFloating = true,
+      cardFloatingDelta,
+      cardFloatingTime,
+      frontImage,
+      backImage,
+      size,
+    },
     ref
   ) => {
     const cardContainerRef = useRef<HTMLDivElement | null>(null);
@@ -55,9 +63,17 @@ const Card = forwardRef<CardRef, CardProps>(
 
     return (
       <div ref={cardContainerRef} className="card-container" data-id={id}>
-        <div ref={cardRef} className="card">
-          <div className="card-face card-face_back">back {content}</div>
-          <div className="card-face card-face_front">front {content}</div>
+        <div ref={cardRef} className="card" style={size}>
+          <div className="card-face card-face_back">
+            <img draggable={false} src={backImage} alt={`card ${id}'s back`} />
+          </div>
+          <div className="card-face card-face_front">
+            <img
+              draggable={false}
+              src={frontImage}
+              alt={`card ${id}'s front`}
+            />
+          </div>
         </div>
         <div ref={cardShadowRef} className="card-shadow" />
       </div>
