@@ -91,14 +91,14 @@ function CardCarousel({
         clickRef.current.clickedCardId = extractCardId(e.target);
       }
     };
-    const handleTouchMove = (e: MouseEvent | TouchEvent) => {
+    const handleTouchMove = throttle((e: MouseEvent | TouchEvent) => {
       const touchPoint = "changedTouches" in e ? e.changedTouches[0] : e;
       cursorRef.current = {
         ...cursorRef.current,
         x: touchPoint.clientX,
         y: touchPoint.clientY,
       };
-    };
+    }, 22);
     const handleUntouch = () => {
       cursorRef.current = { ...cursorRef.current, pressed: false };
       lastCursorRef.current = null;
@@ -403,3 +403,15 @@ function CardCarousel({
 export default CardCarousel;
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
+
+function throttle(callback: Function, interval: number) {
+  let enableCall = true;
+
+  return function (...args: any[]) {
+    if (!enableCall) return;
+
+    enableCall = false;
+    callback.apply(this, args);
+    setTimeout(() => (enableCall = true), interval);
+  };
+}
