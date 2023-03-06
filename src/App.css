@@ -4,7 +4,6 @@ header {
 
 #main {
   flex: 1 1 auto;
-  background-color: #c5c5c5;
   backface-visibility: hidden;
 
   display: flex;
