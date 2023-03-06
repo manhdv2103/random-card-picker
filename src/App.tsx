@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
-import CardCarousel from "./components/cardCarousel/CardCarousel";
+import CardCarousel from "./components/cardCarousel";
 
 const MAX_CARD_DISTANCE = 200;
 

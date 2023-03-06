@@ -1,0 +1,29 @@
+export type CardRef = {
+  card: HTMLDivElement | null;
+  cardContainer: HTMLDivElement | null;
+  cardShadow: HTMLDivElement | null;
+  getId: () => number;
+};
+
+export type ConfigCardProps = {
+  /**
+   * Make the card floating up and down
+   * @default true
+   */
+  cardFloating?: boolean;
+
+  /**
+   * Difference in distance in pixels between the cards' highest and lowest positions
+   */
+  cardFloatingDelta: number;
+
+  /**
+   * Time in seconds for the card to finish a floating routine (low -> high -> low)
+   */
+  cardFloatingTime: number;
+};
+
+export interface CardProps extends ConfigCardProps {
+  id: number;
+  content?: string;
+}
