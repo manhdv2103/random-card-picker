@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Card, { CardRef, ConfigCardProps, extractCardId } from "../card/Card";
 import "./CardCarousel.css";
 
@@ -76,8 +76,8 @@ type Snapping = {
   snappedCard?: CardRef | null;
 };
 
-type Reveal = {
-  state: "pre_revealing" | "revealing" | "done_revealing";
+type Revealing = {
+  state: "pre_revealing" | "revealing" | "done_revealing" | "unrevealing";
   revealId: number | undefined;
   cardRevealAnimations: Animation[];
 };
@@ -102,9 +102,23 @@ function CardCarousel({
   cardProps,
   debug,
 }: CardCarouselProps) {
+  // Element refs
   const [carousel, setCarousel] = useState<HTMLDivElement | null>();
   const cardsRef = useRef<(CardRef | null)[]>([]);
 
+  const handleCarousel = useCallback(
+    (el: HTMLDivElement) => setCarousel(el),
+    []
+  );
+  const handleCard = useCallback((el: CardRef | null, i: number) => {
+    cardsRef.current[i] = el;
+  }, []);
+
+  useEffect(() => {
+    cardsRef.current = cardsRef.current.slice(0, numberOfCards);
+  }, [numberOfCards]);
+
+  // State refs
   const frameIdRef = useRef<number | null>();
   const lastTimeRef = useRef<number>(0);
   const lastCarouselDegreeRef = useRef<number>(0);
@@ -114,25 +128,27 @@ function CardCarousel({
   const clickRef = useRef<Click>({ downCursor: null, clicked: false });
 
   const snappingRef = useRef<Snapping>({ state: "pre_snapping", goal: 0 });
-  const revealRef = useRef<Reveal>({
+  const revealingRef = useRef<Revealing>({
     state: "pre_revealing",
     revealId: undefined,
     cardRevealAnimations: [],
   });
 
-  const handleCarousel = useCallback(
-    (el: HTMLDivElement) => setCarousel(el),
-    []
-  );
+  // Derived states
+  const { carouselDegreePerMs, cardSingleAngle, carouselSnappingDegreePerMs } =
+    useMemo(() => {
+      const carouselDegreePerMs = 360 / (autoRotateTime * 1000);
+      const cardSingleAngle = 360 / numberOfCards;
+      const carouselSnappingDegreePerMs = 360 / (cardSnappingTime * 1000);
 
-  const handleCard = useCallback((el: CardRef | null, i: number) => {
-    cardsRef.current[i] = el;
-  }, []);
+      return {
+        carouselDegreePerMs,
+        cardSingleAngle,
+        carouselSnappingDegreePerMs,
+      };
+    }, [autoRotateTime, cardSnappingTime, numberOfCards]);
 
-  useEffect(() => {
-    cardsRef.current = cardsRef.current.slice(0, numberOfCards);
-  }, [numberOfCards]);
-
+  // Interaction handling
   useEffect(() => {
     if (!interactionContainerRef) return;
 
@@ -180,18 +196,117 @@ function CardCarousel({
     };
   }, [interactionContainerRef]);
 
-  // Main logic
+  // Card reveal handling
+  const handleReveal = useCallback(() => {
+    const revealing = revealingRef.current;
 
+    switch (revealing.state) {
+      case "pre_revealing":
+        const clickedCardId = clickRef.current.clickedCardId;
+        // FIXME: handle card reveal when snapping is disabled
+        const centerCardId = snappingRef.current.snappedCard?.getId();
+
+        if (clickedCardId === undefined || centerCardId === undefined) return;
+
+        // FIXME: reveal card in wrong direction if the mouse is out of the window when dragging the carousel
+        // Only allow to reveal 3 cards nearest to the screen
+        if (
+          !(
+            clickedCardId === centerCardId ||
+            clickedCardId === mod(centerCardId - 1, numberOfCards) ||
+            clickedCardId === mod(centerCardId + 1, numberOfCards)
+          )
+        )
+          return;
+
+        const selectedCard = cardsRef.current.find(
+          card => card?.getId() === clickedCardId
+        );
+
+        if (
+          !(
+            selectedCard?.card &&
+            selectedCard.cardContainer &&
+            selectedCard.cardShadow
+          )
+        )
+          return;
+
+        revealing.revealId = clickedCardId;
+        revealing.state = "revealing";
+
+        // Find the nearest path for the selected card to travel to the front
+        const centerCardIdAlternate =
+          Math.sign(centerCardId - clickedCardId) *
+          (centerCardId - numberOfCards);
+        const cardAngle =
+          cardSingleAngle *
+          (Math.abs(clickedCardId - centerCardId) <=
+          Math.abs(clickedCardId - centerCardIdAlternate)
+            ? centerCardId
+            : centerCardIdAlternate);
+
+        const revealAnimationOption: KeyframeAnimationOptions = {
+          duration: 500,
+          fill: "forwards",
+          easing: "ease-in-out",
+        };
+
+        const revealAnimations: Animation[] = [
+          selectedCard.cardContainer.animate(
+            [
+              {
+                transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
+              },
+            ],
+            revealAnimationOption
+          ),
+          selectedCard.card.animate(
+            [
+              {
+                transform: "translateY(0px)",
+              },
+            ],
+            revealAnimationOption
+          ),
+          selectedCard.cardShadow.animate(
+            [
+              {
+                transform: `translateY(55px) ${
+                  getComputedStyle(selectedCard.cardShadow).transform
+                }`,
+              },
+            ],
+            revealAnimationOption
+          ),
+        ];
+
+        revealing.cardRevealAnimations = revealAnimations;
+        revealing.cardRevealAnimations.forEach(animation => {
+          animation.onfinish = () => (revealing.state = "done_revealing");
+        });
+        break;
+      case "revealing": // do nothing
+        break;
+      case "done_revealing":
+        revealing.revealId = undefined;
+        revealing.state = "unrevealing";
+
+        revealing.cardRevealAnimations.forEach(animation => {
+          animation.reverse();
+          animation.onfinish = () => (revealing.state = "pre_revealing");
+        });
+        break;
+      case "unrevealing": // do nothing
+    }
+  }, [cardSingleAngle, numberOfCards]);
+
+  // Main loop
   useEffect(() => {
     if (!carousel || !cardsRef.current.length) return;
 
-    const carouselDegreePerMs = 360 / (autoRotateTime * 1000);
-    const cardSingleAngle = 360 / numberOfCards;
-    const carouselSnappingDegreePerMs = 360 / (cardSnappingTime * 1000);
-
     const tick: FrameRequestCallback = now => {
       frameIdRef.current = requestAnimationFrame(tick);
-
       const delta = now - lastTimeRef.current;
 
       if (maxFramerate && delta < 1000 / maxFramerate) return;
@@ -201,104 +316,7 @@ function CardCarousel({
       let carouselDegree = lastCarouselDegreeRef.current;
       if (!cursorRef.current.pressed) {
         if (clickRef.current.clicked) {
-          const cardRevealAnimations = revealRef.current.cardRevealAnimations;
-          if (revealRef.current.revealId === undefined) {
-            if (
-              snappingRef.current.snappedCard &&
-              clickRef.current.clickedCardId !== undefined
-            ) {
-              const snappedCard = snappingRef.current.snappedCard;
-              const centerCardId = snappedCard.getId();
-              const clickedCardId = clickRef.current.clickedCardId;
-
-              // FIXME: handle card reveal when snapping is disabled
-              // FIXME: reveal card in wrong direction if the mouse is out of the window when dragging the carousel
-              // Only allow to reveal 3 cards nearest to the screen
-              if (
-                revealRef.current.state === "pre_revealing" &&
-                (clickedCardId === centerCardId ||
-                  clickedCardId === mod(centerCardId - 1, numberOfCards) ||
-                  clickedCardId === mod(centerCardId + 1, numberOfCards))
-              ) {
-                const selectedCard = cardsRef.current.find(
-                  card => card?.getId() === clickedCardId
-                );
-
-                revealRef.current.revealId = clickedCardId;
-                revealRef.current.state = "revealing";
-
-                // Find the nearest path for the selected card to travel to the front
-                const centerCardIdAlternate =
-                  Math.sign(centerCardId - clickedCardId) *
-                  (centerCardId - numberOfCards);
-                const cardAngle =
-                  cardSingleAngle *
-                  (Math.abs(clickedCardId - centerCardId) <=
-                  Math.abs(clickedCardId - centerCardIdAlternate)
-                    ? centerCardId
-                    : centerCardIdAlternate);
-
-                const cardContainerAnimation =
-                  selectedCard?.cardContainer?.animate(
-                    [
-                      {
-                        transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
-                      },
-                    ],
-                    {
-                      duration: 500,
-                      fill: "forwards",
-                      easing: "ease-in-out",
-                    }
-                  );
-                const cardAnimation = selectedCard?.card?.animate(
-                  [
-                    {
-                      transform: "translateY(0px)",
-                    },
-                  ],
-                  {
-                    duration: 500,
-                    fill: "forwards",
-                    easing: "ease-in-out",
-                  }
-                );
-                const cardShadowAnimation = selectedCard?.cardShadow?.animate(
-                  [
-                    {
-                      transform: `translateY(55px) ${
-                        getComputedStyle(selectedCard.cardShadow).transform
-                      }`,
-                    },
-                  ],
-                  {
-                    duration: 500,
-                    fill: "forwards",
-                    easing: "ease-in-out",
-                  }
-                );
-
-                cardRevealAnimations.splice(0, cardRevealAnimations.length);
-                if (cardContainerAnimation)
-                  cardRevealAnimations.push(cardContainerAnimation);
-                if (cardAnimation) cardRevealAnimations.push(cardAnimation);
-                if (cardShadowAnimation)
-                  cardRevealAnimations.push(cardShadowAnimation);
-
-                cardRevealAnimations.forEach(animation => {
-                  animation.onfinish = () =>
-                    (revealRef.current.state = "done_revealing");
-                });
-              }
-            }
-          } else if (revealRef.current.state === "done_revealing") {
-            cardRevealAnimations.forEach(animation => {
-              animation.reverse();
-              animation.onfinish = () =>
-                (revealRef.current.state = "pre_revealing");
-            });
-            revealRef.current.revealId = undefined;
-          }
+          handleReveal();
           clickRef.current.clicked = false;
         } else if (autoRotate) {
           carouselDegree = mod(
@@ -358,7 +376,7 @@ function CardCarousel({
         } else {
           clickRef.current.clicked = false;
 
-          if (revealRef.current.revealId === undefined) {
+          if (revealingRef.current.state === "pre_revealing") {
             const cursorDelta = lastCursorRef.current
               ? cursorRef.current.x - lastCursorRef.current.x
               : 0;
@@ -381,7 +399,7 @@ function CardCarousel({
 
       // Render cards
       cardsRef.current.forEach((cardRef, i) => {
-        if (revealRef.current.revealId === i) return;
+        if (revealingRef.current.revealId === i) return;
         if (!cardRef?.cardContainer || !cardRef?.card || !cardRef?.cardShadow)
           return;
 
@@ -410,6 +428,10 @@ function CardCarousel({
     autoRotateTime,
     cardSnappingTime,
     cardSnapping,
+    handleReveal,
+    carouselDegreePerMs,
+    carouselSnappingDegreePerMs,
+    cardSingleAngle,
   ]);
 
   return (
