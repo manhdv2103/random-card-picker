@@ -68,7 +68,16 @@ type CardCarouselProps = {
   debug?: boolean;
 };
 
-type Cursor = { x: number; y: number; pressed: boolean };
+type Cursor = {
+  x: number;
+  y: number;
+
+  /**
+   * The cursor is currently being pressed (down) or not (up), or
+   * the finger is currently touching the screen or not
+   */
+  pressed: boolean;
+};
 
 type Snapping = {
   state: "pre_snapping" | "snapping" | "done_snapping";
@@ -84,6 +93,11 @@ type Revealing = {
 
 type Click = {
   downCursor: Cursor | null;
+
+  /**
+   * One of the cards is currently being clicked on or not, i.e.,
+   * the cursor down and up positions are on a same card
+   */
   clicked: boolean;
   clickedCardId?: number;
 };
@@ -196,9 +210,55 @@ function CardCarousel({
     };
   }, [interactionContainerRef]);
 
+  const handleSnap = useCallback(
+    (delta: number, carouselDegree: number): number => {
+      const snapping = snappingRef.current;
+
+      switch (snapping.state) {
+        case "pre_snapping":
+          snapping.goal =
+            Math.round(carouselDegree / cardSingleAngle) * cardSingleAngle;
+          snapping.state = "snapping";
+          break;
+        case "snapping":
+          const goalDistance = snapping.goal - carouselDegree;
+          const carouselSnappingDegree = carouselSnappingDegreePerMs * delta;
+
+          if (Math.abs(goalDistance) >= carouselSnappingDegree) {
+            carouselDegree = mod(
+              lastCarouselDegreeRef.current +
+                Math.sign(goalDistance) * carouselSnappingDegree,
+              360
+            );
+          } else {
+            carouselDegree = mod(
+              lastCarouselDegreeRef.current + goalDistance,
+              360
+            );
+
+            snapping.snappedCard =
+              cardsRef.current[
+                (numberOfCards -
+                  snappingRef.current.goal / (360 / numberOfCards)) %
+                  numberOfCards
+              ];
+            snapping.state = "done_snapping";
+          }
+          break;
+        case "done_snapping": // do nothing
+      }
+
+      return carouselDegree;
+    },
+    [cardSingleAngle, carouselSnappingDegreePerMs, numberOfCards]
+  );
+
   // Card reveal handling
   const handleReveal = useCallback(() => {
     const revealing = revealingRef.current;
+
+    // FIXME: handle card reveal when autoRotate is enable
+    // Maybe pause the carousel when revealing and continue rotating when not
 
     switch (revealing.state) {
       case "pre_revealing":
@@ -324,45 +384,7 @@ function CardCarousel({
             360
           );
         } else if (cardSnapping) {
-          const snappingState = snappingRef.current.state;
-          if (snappingState !== "done_snapping") {
-            let snappingGoal = snappingRef.current.goal;
-            if (snappingState === "pre_snapping") {
-              snappingGoal =
-                Math.round(carouselDegree / cardSingleAngle) * cardSingleAngle;
-              snappingRef.current = {
-                state: "snapping",
-                goal: snappingGoal,
-              };
-            }
-
-            const goalDistance = snappingGoal - carouselDegree;
-            const carouselSnappingDegree = carouselSnappingDegreePerMs * delta;
-
-            if (Math.abs(goalDistance) >= carouselSnappingDegree) {
-              carouselDegree = mod(
-                lastCarouselDegreeRef.current +
-                  Math.sign(goalDistance) * carouselSnappingDegree,
-                360
-              );
-            } else {
-              carouselDegree = mod(
-                lastCarouselDegreeRef.current + goalDistance,
-                360
-              );
-
-              snappingRef.current = {
-                ...snappingRef.current,
-                state: "done_snapping",
-                snappedCard:
-                  cardsRef.current[
-                    (numberOfCards -
-                      snappingRef.current.goal / (360 / numberOfCards)) %
-                      numberOfCards
-                  ],
-              };
-            }
-          }
+          carouselDegree = handleSnap(delta, carouselDegree);
         }
       } else if (manualRotate) {
         const downCursor = clickRef.current.downCursor;
@@ -394,6 +416,7 @@ function CardCarousel({
         }
       }
 
+      // Render carousel
       lastCarouselDegreeRef.current = carouselDegree;
       carousel.style.transform = `rotateY(${carouselDegree}deg)`;
 
@@ -432,6 +455,7 @@ function CardCarousel({
     carouselDegreePerMs,
     carouselSnappingDegreePerMs,
     cardSingleAngle,
+    handleSnap,
   ]);
 
   return (
