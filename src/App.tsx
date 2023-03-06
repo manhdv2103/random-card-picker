@@ -32,10 +32,12 @@ function App() {
             autoRotateTime={12}
             manualRotateDistance={1000}
             cardDistance={cardDistance}
-            cardFloatingDelta={12}
-            cardFloatingTime={3}
             cardSnapping
             cardSnappingTime={5}
+            cardProps={{
+              cardFloatingDelta: 12,
+              cardFloatingTime: 3,
+            }}
           />
         </div>
       </div>

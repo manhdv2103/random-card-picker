@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import Card, { CardRef, extractCardId } from "../card/Card";
+import Card, { CardRef, ConfigCardProps, extractCardId } from "../card/Card";
 import "./CardCarousel.css";
 
 type CardCarouselProps = {
@@ -41,22 +41,6 @@ type CardCarouselProps = {
   cardDistance: number;
 
   /**
-   * Make the card floating up and down
-   * @default true
-   */
-  cardFloating?: boolean;
-
-  /**
-   * Difference in distance in pixels between the cards' highest and lowest positions
-   */
-  cardFloatingDelta: number;
-
-  /**
-   * Time in seconds for the card to finish a floating routine
-   */
-  cardFloatingTime: number;
-
-  /**
    * Allow the nearest card to snap (face straight toward the screen)
    * @default false
    */
@@ -71,6 +55,11 @@ type CardCarouselProps = {
    * Max FPS to render (not very accurate). The default is unlimited
    */
   maxFramerate?: number;
+
+  /**
+   * Other configuration options in the Card component
+   */
+  cardProps: ConfigCardProps;
 };
 
 type Cursor = { x: number; y: number; pressed: boolean };
@@ -100,12 +89,10 @@ function CardCarousel({
   manualRotate = true,
   manualRotateDistance,
   cardDistance,
-  cardFloating = true,
-  cardFloatingDelta,
-  cardFloatingTime,
   cardSnapping,
   cardSnappingTime,
   maxFramerate,
+  cardProps,
 }: CardCarouselProps) {
   const [carousel, setCarousel] = useState<HTMLDivElement | null>();
   const cardsRef = useRef<(CardRef | null)[]>([]);
@@ -191,9 +178,6 @@ function CardCarousel({
 
     const carouselDegreePerMs = 360 / (autoRotateTime * 1000);
     const cardSingleAngle = 360 / numberOfCards;
-    const cardFloatingTimeMs = cardFloatingTime * 1000;
-    const cardFloatingPeriod = (2 * Math.PI) / cardFloatingTimeMs;
-    const halfCardFloatingDelta = cardFloatingDelta / 2;
     const carouselSnappingDegreePerMs = 360 / (cardSnappingTime * 1000);
 
     const tick: FrameRequestCallback = now => {
@@ -358,35 +342,17 @@ function CardCarousel({
       carousel.style.transform = `rotateY(${carouselDegree}deg)`;
 
       // Render cards
-
       cardsRef.current.forEach((cardRef, i) => {
         if (revealRef.current.revealId === i) return;
         if (!cardRef?.cardContainer || !cardRef?.card || !cardRef?.cardShadow)
           return;
 
-        const { cardContainer, card } = cardRef;
+        const { cardContainer } = cardRef;
 
         const cardDegree = cardSingleAngle * i;
         cardContainer.style.transform = `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${
           cardDegree + carouselDegree
         }deg)`;
-
-        let cardFloatingHeight = 0;
-        if (cardFloating) {
-          const cardFloatingPhaseShift = Math.PI * (i % 2);
-          cardFloatingHeight =
-            Math.sin(
-              (now % cardFloatingTimeMs) * cardFloatingPeriod +
-                cardFloatingPhaseShift
-            ) * halfCardFloatingDelta;
-        }
-
-        card.style.transform = `translateY(${cardFloatingHeight}px)`;
-
-        // TODO: update card shadow scaling to fit with the card's current height
-        // cardShadow.style.transform = `scale(${
-        //   1 + cardFloatingHeight * (1 - cardFloatingDelta / 10)
-        // })`;
       });
     };
     frameIdRef.current = requestAnimationFrame(tick);
@@ -400,13 +366,10 @@ function CardCarousel({
     interactionContainerRef,
     numberOfCards,
     manualRotateDistance,
-    cardFloatingDelta,
     maxFramerate,
     manualRotate,
     autoRotate,
-    cardFloatingTime,
     autoRotateTime,
-    cardFloating,
     cardSnappingTime,
     cardSnapping,
   ]);
@@ -416,7 +379,13 @@ function CardCarousel({
       {Array(numberOfCards)
         .fill(null) // placeholder
         .map((_, i) => (
-          <Card key={i} id={i} ref={el => handleCard(el, i)} content={i + ""} />
+          <Card
+            key={i}
+            id={i}
+            ref={el => handleCard(el, i)}
+            content={i + ""}
+            {...cardProps}
+          />
         ))}
     </div>
   );
