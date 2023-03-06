@@ -60,6 +60,12 @@ type CardCarouselProps = {
    * Other configuration options in the Card component
    */
   cardProps: ConfigCardProps;
+
+  /**
+   * Enable or disable debug mode
+   * @default false
+   */
+  debug?: boolean;
 };
 
 type Cursor = { x: number; y: number; pressed: boolean };
@@ -93,6 +99,7 @@ function CardCarousel({
   cardSnappingTime,
   maxFramerate,
   cardProps,
+  debug,
 }: CardCarouselProps) {
   const [carousel, setCarousel] = useState<HTMLDivElement | null>();
   const cardsRef = useRef<(CardRef | null)[]>([]);
@@ -202,6 +209,7 @@ function CardCarousel({
               const centerCardId = snappedCard.getId();
               const clickedCardId = clickRef.current.clickedCardId;
 
+              // FIXME: handle card reveal when snapping is disabled
               // Only allow to reveal 3 cards nearest to the screen
               if (
                 clickedCardId === centerCardId ||
@@ -250,11 +258,27 @@ function CardCarousel({
                     easing: "ease-in-out",
                   }
                 );
+                const cardShadowAnimation = selectedCard?.cardShadow?.animate(
+                  [
+                    {
+                      transform: `translateY(55px) ${
+                        getComputedStyle(selectedCard.cardShadow).transform
+                      }`,
+                    },
+                  ],
+                  {
+                    duration: 500,
+                    fill: "forwards",
+                    easing: "ease-in-out",
+                  }
+                );
 
                 cardRevealAnimations.splice(0, cardRevealAnimations.length);
                 if (cardContainerAnimation)
                   cardRevealAnimations.push(cardContainerAnimation);
                 if (cardAnimation) cardRevealAnimations.push(cardAnimation);
+                if (cardShadowAnimation)
+                  cardRevealAnimations.push(cardShadowAnimation);
               }
             }
           } else {
@@ -387,6 +411,7 @@ function CardCarousel({
             {...cardProps}
           />
         ))}
+      {debug && <div className="carousel-debug-plane" />}
     </div>
   );
 }

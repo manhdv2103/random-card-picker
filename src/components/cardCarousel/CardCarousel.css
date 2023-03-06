@@ -7,3 +7,18 @@
   display: flex;
   justify-content: center;
 }
+
+.carousel-debug-plane {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: rgb(215, 163, 94);
+  background: radial-gradient(
+    circle,
+    rgba(215, 163, 94, 1) 17%,
+    rgba(27, 184, 53, 1) 53%,
+    rgba(192, 0, 200, 1) 93%
+  );
+  transform-style: preserve-3d;
+  transform: translateY(-30%) rotateX(90deg);
+}
