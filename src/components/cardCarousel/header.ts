@@ -1,4 +1,4 @@
-import { CardRef, ConfigCardProps } from "../card/props";
+import { CardRef, ConfigCardProps } from "../card/header";
 
 export type CardCarouselProps = {
   /**

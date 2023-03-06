@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { CardProps, CardRef } from "./props";
+import { CardProps, CardRef } from "./header";
 import "./styles.css";
 
 const Card = forwardRef<CardRef, CardProps>(

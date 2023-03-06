@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Card, { extractCardId } from "../card";
-import { CardRef } from "../card/props";
+import { CardRef } from "../card/header";
 import backImg from "./../../assets/back.png";
 import frontImg from "./../../assets/front.png";
 import {
