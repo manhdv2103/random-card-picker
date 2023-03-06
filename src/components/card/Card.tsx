@@ -85,8 +85,8 @@ const Card = forwardRef<CardRef, CardProps>(
     return (
       <div ref={cardContainerRef} className="card-container" data-id={id}>
         <div ref={cardRef} className="card">
-          <div className="card-face card-face_front">front {content}</div>
           <div className="card-face card-face_back">back {content}</div>
+          <div className="card-face card-face_front">front {content}</div>
         </div>
         <div ref={cardShadowRef} className="card-shadow" />
       </div>

@@ -20,11 +20,11 @@
   border: 2px solid black;
 }
 
-.card-face_front {
+.card-face_back {
   background: red;
 }
 
-.card-face_back {
+.card-face_front {
   background: blue;
   transform: rotateY(180deg);
 }
