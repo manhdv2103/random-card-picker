@@ -19,14 +19,10 @@ body {
   flex-direction: column;
 
   overflow: hidden;
-  /* background-color: black; */
   background: rgb(94, 206, 215);
-  background: radial-gradient(
-    circle,
-    rgba(94, 206, 215, 1) 17%,
-    rgba(27, 139, 184, 1) 64%,
-    rgba(0, 116, 200, 1) 100%
-  );
+  background-image: url("assets/gradient.png");
+  background-size: cover;
+  background-position: center;
 }
 
 #root {
