@@ -172,14 +172,17 @@ function CardCarousel({
       kineticRotate && kineticStartTracking();
     };
 
-    const handleTouchMove = throttle((e: MouseEvent | TouchEvent) => {
-      const touchPoint = "changedTouches" in e ? e.changedTouches[0] : e;
-      cursorRef.current = {
-        ...cursorRef.current,
-        x: touchPoint.clientX,
-        y: touchPoint.clientY,
-      };
-    }, 22);
+    const handleTouchMove = throttle(
+      (e: MouseEvent | TouchEvent) => {
+        const touchPoint = "changedTouches" in e ? e.changedTouches[0] : e;
+        cursorRef.current = {
+          ...cursorRef.current,
+          x: touchPoint.clientX,
+          y: touchPoint.clientY,
+        };
+      },
+      maxFramerate === undefined ? 0 : 1000 / maxFramerate
+    );
 
     const handleUntouch = () => {
       cursorRef.current = { ...cursorRef.current, pressed: false };
@@ -208,6 +211,7 @@ function CardCarousel({
     kineticEndTracking,
     kineticRotate,
     kineticStartTracking,
+    maxFramerate,
   ]);
 
   // Rotate handlings
