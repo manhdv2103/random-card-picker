@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Card, { extractCardId } from "../card";
 import { CardRef } from "../card/header";
 import backImg from "./../../assets/card-back.png";
-import frontImg from "./../../assets/card-front.png";
 import {
   CardCarouselProps,
   Click,
@@ -33,6 +32,7 @@ function CardCarousel({
   cardSnappingTime,
   maxFramerate,
   cardProps,
+  cardContents,
   debug,
 }: CardCarouselProps) {
   // Element refs
@@ -88,6 +88,15 @@ function CardCarousel({
         carouselSnappingDegreePerMs,
       };
     }, [autoRotateTime, cardSnappingTime, numberOfCards]);
+
+  const cardFrontImgs = useMemo(
+    () =>
+      Array.from(
+        { length: numberOfCards },
+        () => cardContents[Math.floor(Math.random() * cardContents.length)]
+      ),
+    [cardContents, numberOfCards]
+  );
 
   // Kinetic tracking
   const kineticTrack = useCallback(() => {
@@ -500,7 +509,7 @@ function CardCarousel({
             key={i}
             id={i}
             ref={el => handleCard(el, i)}
-            frontImage={frontImg}
+            frontImage={cardFrontImgs[i]}
             backImage={backImg}
             debug={debug}
             {...cardProps}

@@ -71,6 +71,11 @@ export type CardCarouselProps = {
   maxFramerate?: number;
 
   /**
+   * Array of card contents (image urls) to be randomly chosen for each card
+   */
+  cardContents: string[];
+
+  /**
    * Other configuration options in the Card component
    */
   cardProps: ConfigCardProps;

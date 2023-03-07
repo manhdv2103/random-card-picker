@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
+import fiveDollar from "./assets/card-fiveDollar.png";
+import nothing from "./assets/card-nothing.png";
 import CardCarousel from "./components/cardCarousel";
 
 const MAX_CARD_DISTANCE = 200;
@@ -19,6 +21,8 @@ function App() {
 
     return () => window.removeEventListener("resize", handleResize);
   });
+
+  const cardContents = useMemo(() => [fiveDollar, nothing], []);
 
   return (
     <>
@@ -40,6 +44,7 @@ function App() {
               cardFloatingDelta: 12,
               cardFloatingTime: 3,
             }}
+            cardContents={cardContents}
           />
         </div>
       </div>
