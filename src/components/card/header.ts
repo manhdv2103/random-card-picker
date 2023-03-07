@@ -43,4 +43,10 @@ export interface CardProps extends ConfigCardProps {
    * Front image for the card
    */
   frontImage?: string;
+
+  /**
+   * Enable or disable debug mode
+   * @default false
+   */
+  debug?: boolean;
 }

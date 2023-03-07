@@ -31,6 +31,8 @@ function App() {
             autoRotate={false}
             autoRotateTime={12}
             manualRotateDistance={1000}
+            kineticRotateWeight={10}
+            kineticDecelerationRate={325}
             cardDistance={cardDistance}
             cardSnapping
             cardSnappingTime={5}

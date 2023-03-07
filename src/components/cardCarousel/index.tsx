@@ -8,6 +8,11 @@ import {
   Click,
   CLICK_PIXEL_THRESHOLD,
   Cursor,
+  KineticTracking,
+  KINETIC_SNAPPING_VELOCITY_LOWER_BOUND,
+  KINETIC_STOP_DEGREE,
+  KINETIC_TRACKING_RATE,
+  KINETIC_VELOCITY_LOWER_BOUND,
   Revealing,
   Snapping,
 } from "./header";
@@ -18,6 +23,9 @@ function CardCarousel({
   numberOfCards,
   autoRotate = true,
   autoRotateTime,
+  kineticRotate = true,
+  kineticRotateWeight,
+  kineticDecelerationRate,
   manualRotate = true,
   manualRotateDistance,
   cardDistance,
@@ -58,6 +66,14 @@ function CardCarousel({
     revealId: undefined,
     cardRevealAnimations: [],
   });
+  const kineticTrackingRef = useRef<KineticTracking>({
+    state: "no_kinetic_scrolling",
+    velocity: 0,
+    amplitude: 0,
+    lastTime: 0,
+    lastPos: 0,
+    goal: 0,
+  });
 
   // Derived states
   const { carouselDegreePerMs, cardSingleAngle, carouselSnappingDegreePerMs } =
@@ -73,6 +89,60 @@ function CardCarousel({
       };
     }, [autoRotateTime, cardSnappingTime, numberOfCards]);
 
+  // Kinetic tracking
+  const kineticTrack = useCallback(() => {
+    const kineticTracking = kineticTrackingRef.current;
+    const now = performance.now();
+
+    const deltaTime = now - kineticTracking.lastTime;
+    kineticTracking.lastTime = now;
+
+    const deltaPos = cursorRef.current.x - kineticTracking.lastPos;
+    kineticTracking.lastPos = cursorRef.current.x;
+
+    const newVel = deltaPos / ((1 + deltaTime) / 1000);
+
+    // simple moving average filter
+    kineticTracking.velocity = 0.8 * newVel + 0.2 * kineticTracking.velocity;
+  }, []);
+
+  const kineticStartTracking = useCallback(() => {
+    clearInterval(kineticTrackingRef.current.tracker);
+    kineticTrackingRef.current = {
+      state: "no_kinetic_scrolling",
+      velocity: 0,
+      amplitude: 0,
+      goal: 0,
+      lastTime: performance.now(),
+      lastPos: cursorRef.current.x,
+      tracker: setInterval(kineticTrack, KINETIC_TRACKING_RATE),
+    };
+  }, [kineticTrack]);
+
+  const kineticEndTracking = useCallback(() => {
+    const kineticTracking = kineticTrackingRef.current;
+    clearInterval(kineticTracking.tracker);
+
+    const velocityLowerBound = cardSnapping
+      ? KINETIC_SNAPPING_VELOCITY_LOWER_BOUND
+      : KINETIC_VELOCITY_LOWER_BOUND;
+    if (Math.abs(kineticTracking.velocity) > velocityLowerBound) {
+      kineticTracking.amplitude =
+        (1 / kineticRotateWeight) * kineticTracking.velocity;
+      kineticTracking.goal =
+        lastCarouselDegreeRef.current + kineticTracking.amplitude;
+
+      // Round the target to the nearest card position
+      if (cardSnapping) {
+        kineticTracking.goal =
+          Math.ceil(kineticTracking.goal / cardSingleAngle) * cardSingleAngle;
+      }
+
+      kineticTracking.state = "kinetic_scrolling";
+      kineticTracking.lastTime = performance.now();
+    }
+  }, [cardSingleAngle, cardSnapping, kineticRotateWeight]);
+
   // Interaction handling
   useEffect(() => {
     if (!interactionContainerRef) return;
@@ -86,11 +156,13 @@ function CardCarousel({
       };
 
       clickRef.current.downCursor = cursorRef.current;
-
       if (e.target instanceof Element) {
         clickRef.current.clickedCardId = extractCardId(e.target);
       }
+
+      kineticRotate && kineticStartTracking();
     };
+
     const handleTouchMove = throttle((e: MouseEvent | TouchEvent) => {
       const touchPoint = "changedTouches" in e ? e.changedTouches[0] : e;
       cursorRef.current = {
@@ -99,9 +171,12 @@ function CardCarousel({
         y: touchPoint.clientY,
       };
     }, 22);
+
     const handleUntouch = () => {
       cursorRef.current = { ...cursorRef.current, pressed: false };
       lastCursorRef.current = null;
+
+      kineticRotate && kineticEndTracking();
     };
 
     interactionContainerRef.addEventListener("mousedown", handleTouch);
@@ -119,8 +194,14 @@ function CardCarousel({
       interactionContainerRef.removeEventListener("mouseup", handleUntouch);
       interactionContainerRef.removeEventListener("touchend", handleUntouch);
     };
-  }, [interactionContainerRef]);
+  }, [
+    interactionContainerRef,
+    kineticEndTracking,
+    kineticRotate,
+    kineticStartTracking,
+  ]);
 
+  // Rotate handlings
   const handleAutoRotate = useCallback(
     (delta: number, carouselDegree: number): number =>
       mod(carouselDegree + carouselDegreePerMs * delta, 360),
@@ -149,6 +230,31 @@ function CardCarousel({
     [cardSnapping, manualRotateDistance]
   );
 
+  // TODO: smoothly merge velocities of the kinetic scrolling and auto scrolling if autoScroll is enabled
+  const handleKineticRotate = useCallback(
+    (now: number, carouselDegree: number): number => {
+      const goalDistance =
+        -kineticTrackingRef.current.amplitude *
+        Math.exp(
+          -(now - kineticTrackingRef.current.lastTime) / kineticDecelerationRate
+        );
+
+      if (Math.abs(goalDistance) > KINETIC_STOP_DEGREE) {
+        carouselDegree = mod(
+          kineticTrackingRef.current.goal + goalDistance,
+          360
+        );
+      } else {
+        carouselDegree = mod(kineticTrackingRef.current.goal, 360);
+        kineticTrackingRef.current.state = "no_kinetic_scrolling";
+      }
+
+      return carouselDegree;
+    },
+    [kineticDecelerationRate]
+  );
+
+  // Card snap handling
   const handleSnap = useCallback(
     (delta: number, carouselDegree: number): number => {
       const snapping = snappingRef.current;
@@ -316,7 +422,9 @@ function CardCarousel({
         }
 
         if (revealingRef.current.state === "pre_revealing") {
-          if (autoRotate) {
+          if (kineticTrackingRef.current.state === "kinetic_scrolling") {
+            carouselDegree = handleKineticRotate(now, carouselDegree);
+          } else if (autoRotate) {
             carouselDegree = handleAutoRotate(delta, carouselDegree);
           } else if (cardSnapping) {
             carouselDegree = handleSnap(delta, carouselDegree);
@@ -365,24 +473,18 @@ function CardCarousel({
       frameIdRef.current && cancelAnimationFrame(frameIdRef.current);
     };
   }, [
-    carousel,
-    cardDistance,
-    interactionContainerRef,
-    numberOfCards,
-    manualRotateDistance,
-    maxFramerate,
-    manualRotate,
     autoRotate,
-    autoRotateTime,
-    cardSnappingTime,
-    cardSnapping,
-    carouselDegreePerMs,
-    carouselSnappingDegreePerMs,
+    cardDistance,
     cardSingleAngle,
+    cardSnapping,
+    carousel,
+    handleAutoRotate,
+    handleKineticRotate,
+    handleManualRotate,
     handleReveal,
     handleSnap,
-    handleAutoRotate,
-    handleManualRotate,
+    manualRotate,
+    maxFramerate,
   ]);
 
   return (
@@ -396,6 +498,7 @@ function CardCarousel({
             ref={el => handleCard(el, i)}
             frontImage={frontImg}
             backImage={backImg}
+            debug={debug}
             {...cardProps}
           />
         ))}

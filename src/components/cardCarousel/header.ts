@@ -29,6 +29,22 @@ export type CardCarouselProps = {
   manualRotate?: boolean;
 
   /**
+   * If manualRotate is true, the carousel will be scrolled kinetically
+   * @default true
+   */
+  kineticRotate?: boolean;
+
+  /**
+   * The higher the number, the heavier you feel when rotating the carousel and vice versa
+   */
+  kineticRotateWeight: number;
+
+  /**
+   * The higher the number, the slower the kinetic rotating stops and vice versa
+   */
+  kineticDecelerationRate: number;
+
+  /**
    * Distance in pixels required to drag the carousel (by mouse, hand, etc.) for it to finish 1 round of rotation in manual rotation mode
    */
   manualRotateDistance: number;
@@ -89,6 +105,16 @@ export type Revealing = {
   cardRevealAnimations: Animation[];
 };
 
+export type KineticTracking = {
+  state: "no_kinetic_scrolling" | "kinetic_scrolling";
+  velocity: number;
+  amplitude: number;
+  lastTime: number;
+  lastPos: number;
+  tracker?: NodeJS.Timer;
+  goal: number;
+};
+
 export type Click = {
   downCursor: Cursor | null;
 
@@ -104,3 +130,24 @@ export type Click = {
  * Difference in pixels between the cursor's up and down positions to be reconigned as a click
  */
 export const CLICK_PIXEL_THRESHOLD = 2;
+
+/**
+ * Rate of cursor position tracking to calculate kinetic scrolling velocity
+ */
+export const KINETIC_TRACKING_RATE = 50; // ms
+
+/**
+ * Kinetic scrolling will stop completely if the carousel rotates slower than this
+ */
+export const KINETIC_STOP_DEGREE = 0.1; // deg
+
+/**
+ * Lower bound of the velocity for the carousel to start kinetic scrolling
+ */
+export const KINETIC_VELOCITY_LOWER_BOUND = 10; // deg/s
+
+/**
+ * Lower bound of the velocity for the carousel to start kinetic scrolling when snapping is enabled
+ * Much higher than `KINETIC_VELOCITY_LOWER_BOUND` to spare some lower velocity scroll handling for snapping
+ */
+export const KINETIC_SNAPPING_VELOCITY_LOWER_BOUND = 300; // deg/s

@@ -12,6 +12,7 @@ const Card = forwardRef<CardRef, CardProps>(
       frontImage,
       backImage,
       size,
+      debug,
     },
     ref
   ) => {
@@ -74,6 +75,7 @@ const Card = forwardRef<CardRef, CardProps>(
               alt={`card ${id}'s front`}
             />
           </div>
+          {debug && <span className="card-debug-id">{id}</span>}
         </div>
         <div ref={cardShadowRef} className="card-shadow" />
       </div>
