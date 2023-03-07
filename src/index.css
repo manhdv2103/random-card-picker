@@ -20,7 +20,7 @@ body {
   flex-direction: column;
 
   overflow: hidden;
-  background-image: url("assets/gradient.png");
+  background-image: url("assets/background.png");
   background-size: cover;
   background-position: center;
 }
