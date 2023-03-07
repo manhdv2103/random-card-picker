@@ -7,7 +7,6 @@
 html {
   height: 100vh;
   height: -webkit-fill-available;
-  background: #309cbc;
 }
 
 body {
@@ -18,11 +17,7 @@ body {
   justify-content: center;
   align-items: center;
   flex-direction: column;
-
   overflow: hidden;
-  background-image: url("assets/background.png");
-  background-size: cover;
-  background-position: center;
 }
 
 #root {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import fiveDollar from "./assets/card-fiveDollar.png";
 import nothing from "./assets/card-nothing.png";
+import background from "./assets/background.png";
 import CardCarousel from "./components/cardCarousel";
 
 const MAX_CARD_DISTANCE = 200;
@@ -26,6 +27,7 @@ function App() {
 
   return (
     <>
+      <img id="background" alt="game's background" src={background} />
       <header></header>
       <div id="main" ref={handleMain}>
         <div id="scene">
