@@ -313,10 +313,14 @@ function CardCarousel({
         if (clickRef.current.clicked) {
           handleReveal();
           clickRef.current.clicked = false;
-        } else if (autoRotate) {
-          carouselDegree = handleAutoRotate(delta, carouselDegree);
-        } else if (cardSnapping) {
-          carouselDegree = handleSnap(delta, carouselDegree);
+        }
+
+        if (revealingRef.current.state === "pre_revealing") {
+          if (autoRotate) {
+            carouselDegree = handleAutoRotate(delta, carouselDegree);
+          } else if (cardSnapping) {
+            carouselDegree = handleSnap(delta, carouselDegree);
+          }
         }
       } else {
         const downCursor = clickRef.current.downCursor;
