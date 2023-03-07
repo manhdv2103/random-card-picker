@@ -279,8 +279,7 @@ function CardCarousel({
 
             snapping.snappedCard =
               cardsRef.current[
-                (numberOfCards -
-                  snappingRef.current.goal / (360 / numberOfCards)) %
+                (numberOfCards - snapping.goal / (360 / numberOfCards)) %
                   numberOfCards
               ];
             snapping.state = "done_snapping";
@@ -305,11 +304,16 @@ function CardCarousel({
       case "pre_revealing":
         const clickedCardId = clickRef.current.clickedCardId;
         // FIXME: handle card reveal when snapping is disabled
+        const snappingState = snappingRef.current.state;
         const centerCardId = snappingRef.current.snappedCard?.getId();
 
-        if (clickedCardId === undefined || centerCardId === undefined) return;
+        if (
+          snappingState !== "done_snapping" ||
+          clickedCardId === undefined ||
+          centerCardId === undefined
+        )
+          return;
 
-        // FIXME: reveal card in wrong direction if the mouse is out of the window when dragging the carousel
         // Only allow to reveal 3 cards nearest to the screen
         if (
           !(
