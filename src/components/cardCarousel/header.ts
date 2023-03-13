@@ -50,6 +50,21 @@ export type CardCarouselProps = {
   manualRotateDistance: number;
 
   /**
+   * Distance in pixels of the dealing deck from the center of the carousel
+   */
+  dealingDeckDistanceFromCenter: number;
+
+  /**
+   * Direction of the dealing card to travel from the user's perspective
+   */
+  dealingDirection: "toward" | "away";
+
+  /**
+   * Height in pixels for the card to fly up when dealing
+   */
+  dealingFlyHeight: number;
+
+  /**
    * Distance in pixels of the cards from the center of the carousel
    */
   cardDistance: number;

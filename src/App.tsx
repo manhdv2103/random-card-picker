@@ -39,6 +39,9 @@ function App() {
             manualRotateDistance={1000}
             kineticRotateWeight={10}
             kineticDecelerationRate={325}
+            dealingDeckDistanceFromCenter={220}
+            dealingDirection="away"
+            dealingFlyHeight={100}
             cardDistance={cardDistance}
             cardSnapping
             cardSnappingTime={5}

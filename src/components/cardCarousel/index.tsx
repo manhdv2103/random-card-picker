@@ -48,6 +48,9 @@ function CardCarousel({
   kineticDecelerationRate,
   manualRotate = true,
   manualRotateDistance,
+  dealingDeckDistanceFromCenter,
+  dealingDirection,
+  dealingFlyHeight,
   cardDistance,
   cardSnapping,
   cardSnappingTime,
@@ -252,10 +255,8 @@ function CardCarousel({
 
         const { cardContainer, cardShadow } = cardRef;
 
-        const dealingDeckDistanceFromCenter = 220;
-        const dealingFlyHeight = 100;
-
         const delay = (numberOfCards - i - 1) * 300;
+        const direction = dealingDirection === "toward" ? 1 : -1;
         const cardDegree = cardSingleAngle * i;
         const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) translateZ(calc(${SHADOW_WIDTH} / 2 + ${
           i + 1
@@ -268,10 +269,14 @@ function CardCarousel({
               transform: startState,
             },
             {
-              transform: `${startState} translateY(-${cardDistance}px)`,
+              transform: `${startState} translateY(${
+                direction * cardDistance
+              }px)`,
             },
             {
-              transform: `${startState} translateY(-${cardDistance}px) translateZ(${dealingFlyHeight}px) rotateX(-90deg)`,
+              transform: `${startState} translateY(${
+                direction * cardDistance
+              }px) translateZ(${dealingFlyHeight}px) rotateX(-90deg)`,
             },
             {
               transform: `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${cardDegree}deg)`,
@@ -304,7 +309,14 @@ function CardCarousel({
         }
       });
     },
-    [cardDistance, cardSingleAngle, numberOfCards]
+    [
+      cardDistance,
+      cardSingleAngle,
+      dealingDeckDistanceFromCenter,
+      dealingDirection,
+      dealingFlyHeight,
+      numberOfCards,
+    ]
   );
 
   // Rotate handlings
