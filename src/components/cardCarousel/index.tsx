@@ -235,6 +235,13 @@ function CardCarousel({
     maxFramerate,
   ]);
 
+  // Floating animation
+  const runCardsFloatingAnimation = useCallback(() => {
+    cardsRef.current.forEach(cardRef => {
+      cardRef?.startFloatingAnimation();
+    });
+  }, []);
+
   // Dealing animation
   const runDealingAnimation = useCallback(
     (finishCallback: () => void) => {
@@ -297,7 +304,7 @@ function CardCarousel({
         }
       });
     },
-    [cardDistance, cardSingleAngle, numberOfCards, runCardsFloatingAnimation]
+    [cardDistance, cardSingleAngle, numberOfCards]
   );
 
   // Rotate handlings
@@ -504,6 +511,8 @@ function CardCarousel({
     if (!carousel || !cardsRef.current.length) return;
 
     runDealingAnimation(() => {
+      runCardsFloatingAnimation();
+
       const tick: FrameRequestCallback = now => {
         frameIdRef.current = requestAnimationFrame(tick);
         const delta = now - lastTimeRef.current;
@@ -584,6 +593,7 @@ function CardCarousel({
     handleSnap,
     manualRotate,
     maxFramerate,
+    runCardsFloatingAnimation,
     runDealingAnimation,
   ]);
 

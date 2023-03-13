@@ -3,6 +3,12 @@ export type CardRef = {
   cardContainer: HTMLDivElement | null;
   cardShadow: HTMLDivElement | null;
   getId: () => number;
+
+  /**
+   * Start floating animation using this function
+   * TODO: Have to do this because of dealing animation. Find a better way
+   */
+  startFloatingAnimation: () => void;
 };
 
 export type ConfigCardProps = {

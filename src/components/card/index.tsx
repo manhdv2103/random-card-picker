@@ -1,4 +1,10 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { CardProps, CardRef } from "./header";
 import "./styles.css";
 
@@ -16,6 +22,8 @@ const Card = forwardRef<CardRef, CardProps>(
     },
     ref
   ) => {
+    const [isfloatingAnimationStarted, setIsfloatingAnimationStarted] =
+      useState(false);
     const cardContainerRef = useRef<HTMLDivElement | null>(null);
     const cardRef = useRef<HTMLDivElement | null>(null);
     const cardShadowRef = useRef<HTMLDivElement | null>(null);
@@ -25,12 +33,13 @@ const Card = forwardRef<CardRef, CardProps>(
       cardContainer: cardContainerRef.current,
       cardShadow: cardShadowRef.current,
       getId: () => id,
+      startFloatingAnimation: () => setIsfloatingAnimationStarted(true),
     }));
 
     useEffect(() => {
       let cardFloatingAnimation: Animation | undefined = undefined;
 
-      if (cardFloating) {
+      if (cardFloating && isfloatingAnimationStarted) {
         const halfCardFloatingDelta = cardFloatingDelta / 2;
 
         cardFloatingAnimation = cardRef.current?.animate(
@@ -46,7 +55,7 @@ const Card = forwardRef<CardRef, CardProps>(
             duration: cardFloatingTime * 500,
             iterations: Infinity,
             direction: "alternate",
-            iterationStart: id % 2,
+            iterationStart: (id % 2) + 0.5, // 0.5 cuz it's when the card is at its init state
             easing: "ease-in-out",
           }
         );
@@ -60,7 +69,13 @@ const Card = forwardRef<CardRef, CardProps>(
       return () => {
         cardFloatingAnimation?.cancel();
       };
-    }, [cardFloating, cardFloatingDelta, cardFloatingTime, id]);
+    }, [
+      cardFloating,
+      cardFloatingDelta,
+      cardFloatingTime,
+      id,
+      isfloatingAnimationStarted,
+    ]);
 
     return (
       <div ref={cardContainerRef} className="card-container" data-id={id}>
