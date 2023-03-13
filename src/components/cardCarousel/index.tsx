@@ -17,6 +17,27 @@ import {
 } from "./header";
 import "./styles.css";
 
+const windowStyle = window.getComputedStyle(document.body);
+
+// CSS variables
+const SHADOW_SPACE_FROM_CARD = windowStyle.getPropertyValue(
+  "--shadow-space-from-card"
+);
+const SHADOW_WIDTH = windowStyle.getPropertyValue("--shadow-width");
+const SHADOW_OPACITY = windowStyle.getPropertyValue("--shadow-opacity");
+
+// Animation options
+const DEALING_ANIMATION_OPTION: KeyframeAnimationOptions = {
+  duration: 1300,
+  fill: "forwards",
+  easing: "ease",
+};
+const REVEAL_ANIMATION_OPTION: KeyframeAnimationOptions = {
+  duration: 500,
+  fill: "forwards",
+  easing: "ease-in-out",
+};
+
 function CardCarousel({
   interactionContainerRef,
   numberOfCards,
@@ -214,6 +235,71 @@ function CardCarousel({
     maxFramerate,
   ]);
 
+  // Dealing animation
+  const runDealingAnimation = useCallback(
+    (finishCallback: () => void) => {
+      const animations: Animation[] = [];
+      cardsRef.current.forEach((cardRef, i) => {
+        if (!cardRef?.cardContainer || !cardRef?.card || !cardRef?.cardShadow)
+          return;
+
+        const { cardContainer, cardShadow } = cardRef;
+
+        const dealingDeckDistanceFromCenter = 220;
+        const dealingFlyHeight = 100;
+
+        const delay = (numberOfCards - i - 1) * 300;
+        const cardDegree = cardSingleAngle * i;
+        const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) translateZ(calc(${SHADOW_WIDTH} / 2 + ${
+          i + 1
+        }px))`;
+
+        cardContainer.style.transform = startState;
+        const animation = cardContainer.animate(
+          [
+            {
+              transform: startState,
+            },
+            {
+              transform: `${startState} translateY(-${cardDistance}px)`,
+            },
+            {
+              transform: `${startState} translateY(-${cardDistance}px) translateZ(${dealingFlyHeight}px) rotateX(-90deg)`,
+            },
+            {
+              transform: `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${cardDegree}deg)`,
+            },
+          ],
+          { ...DEALING_ANIMATION_OPTION, delay }
+        );
+
+        cardShadow.style.opacity = "0";
+        cardShadow.animate(
+          [
+            { opacity: 0 },
+            { opacity: 0 },
+            { opacity: 0 },
+            { opacity: SHADOW_OPACITY },
+          ],
+          { ...DEALING_ANIMATION_OPTION, delay }
+        );
+
+        animations.push(animation);
+
+        // the animation deals from the last card to the first one
+        if (i === 0) {
+          animation.addEventListener("finish", () => {
+            finishCallback();
+
+            // let others do the rest
+            animations.forEach(a => a.cancel());
+          });
+        }
+      });
+    },
+    [cardDistance, cardSingleAngle, numberOfCards, runCardsFloatingAnimation]
+  );
+
   // Rotate handlings
   const handleAutoRotate = useCallback(
     (delta: number, carouselDegree: number): number =>
@@ -364,12 +450,6 @@ function CardCarousel({
             ? centerCardId
             : centerCardIdAlternate);
 
-        const revealAnimationOption: KeyframeAnimationOptions = {
-          duration: 500,
-          fill: "forwards",
-          easing: "ease-in-out",
-        };
-
         const revealAnimations: Animation[] = [
           selectedCard.cardContainer.animate(
             [
@@ -377,7 +457,7 @@ function CardCarousel({
                 transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
               },
             ],
-            revealAnimationOption
+            REVEAL_ANIMATION_OPTION
           ),
           selectedCard.card.animate(
             [
@@ -385,7 +465,7 @@ function CardCarousel({
                 transform: "translateY(0px)",
               },
             ],
-            revealAnimationOption
+            REVEAL_ANIMATION_OPTION
           ),
           selectedCard.cardShadow.animate(
             [
@@ -395,7 +475,7 @@ function CardCarousel({
                 }`,
               },
             ],
-            revealAnimationOption
+            REVEAL_ANIMATION_OPTION
           ),
         ];
 
@@ -423,68 +503,70 @@ function CardCarousel({
   useEffect(() => {
     if (!carousel || !cardsRef.current.length) return;
 
-    const tick: FrameRequestCallback = now => {
-      frameIdRef.current = requestAnimationFrame(tick);
-      const delta = now - lastTimeRef.current;
+    runDealingAnimation(() => {
+      const tick: FrameRequestCallback = now => {
+        frameIdRef.current = requestAnimationFrame(tick);
+        const delta = now - lastTimeRef.current;
 
-      if (maxFramerate && delta < 1000 / maxFramerate) return;
+        if (maxFramerate && delta < 1000 / maxFramerate) return;
 
-      lastTimeRef.current = now;
-      let carouselDegree = lastCarouselDegreeRef.current;
+        lastTimeRef.current = now;
+        let carouselDegree = lastCarouselDegreeRef.current;
 
-      if (!cursorRef.current.pressed) {
-        if (clickRef.current.clicked) {
-          handleReveal();
-          clickRef.current.clicked = false;
-        }
-
-        if (revealingRef.current.state === "pre_revealing") {
-          if (kineticTrackingRef.current.state === "kinetic_scrolling") {
-            carouselDegree = handleKineticRotate(now, carouselDegree);
-          } else if (autoRotate) {
-            carouselDegree = handleAutoRotate(delta, carouselDegree);
-          } else if (cardSnapping) {
-            carouselDegree = handleSnap(delta, carouselDegree);
+        if (!cursorRef.current.pressed) {
+          if (clickRef.current.clicked) {
+            handleReveal();
+            clickRef.current.clicked = false;
           }
-        }
-      } else {
-        const downCursor = clickRef.current.downCursor;
 
-        if (
-          downCursor &&
-          Math.abs(downCursor.x - cursorRef.current.x) <
-            CLICK_PIXEL_THRESHOLD &&
-          Math.abs(downCursor.y - cursorRef.current.y) < CLICK_PIXEL_THRESHOLD
-        ) {
-          clickRef.current.clicked = true;
+          if (revealingRef.current.state === "pre_revealing") {
+            if (kineticTrackingRef.current.state === "kinetic_scrolling") {
+              carouselDegree = handleKineticRotate(now, carouselDegree);
+            } else if (autoRotate) {
+              carouselDegree = handleAutoRotate(delta, carouselDegree);
+            } else if (cardSnapping) {
+              carouselDegree = handleSnap(delta, carouselDegree);
+            }
+          }
         } else {
-          clickRef.current.clicked = false;
+          const downCursor = clickRef.current.downCursor;
 
-          if (manualRotate) {
-            carouselDegree = handleManualRotate(carouselDegree);
+          if (
+            downCursor &&
+            Math.abs(downCursor.x - cursorRef.current.x) <
+              CLICK_PIXEL_THRESHOLD &&
+            Math.abs(downCursor.y - cursorRef.current.y) < CLICK_PIXEL_THRESHOLD
+          ) {
+            clickRef.current.clicked = true;
+          } else {
+            clickRef.current.clicked = false;
+
+            if (manualRotate) {
+              carouselDegree = handleManualRotate(carouselDegree);
+            }
           }
         }
-      }
 
-      // Render carousel
-      lastCarouselDegreeRef.current = carouselDegree;
-      carousel.style.transform = `rotateY(${carouselDegree}deg)`;
+        // Render carousel
+        lastCarouselDegreeRef.current = carouselDegree;
+        carousel.style.transform = `rotateY(${carouselDegree}deg)`;
 
-      // Render cards
-      cardsRef.current.forEach((cardRef, i) => {
-        if (revealingRef.current.revealId === i) return;
-        if (!cardRef?.cardContainer || !cardRef?.card || !cardRef?.cardShadow)
-          return;
+        // Render cards
+        cardsRef.current.forEach((cardRef, i) => {
+          if (revealingRef.current.revealId === i) return;
+          if (!cardRef?.cardContainer || !cardRef?.card || !cardRef?.cardShadow)
+            return;
 
-        const { cardContainer } = cardRef;
+          const { cardContainer } = cardRef;
 
-        const cardDegree = cardSingleAngle * i;
-        cardContainer.style.transform = `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${
-          cardDegree + carouselDegree
-        }deg)`;
-      });
-    };
-    frameIdRef.current = requestAnimationFrame(tick);
+          const cardDegree = cardSingleAngle * i;
+          cardContainer.style.transform = `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${
+            cardDegree + carouselDegree
+          }deg)`;
+        });
+      };
+      frameIdRef.current = requestAnimationFrame(tick);
+    });
 
     return () => {
       frameIdRef.current && cancelAnimationFrame(frameIdRef.current);
@@ -502,6 +584,7 @@ function CardCarousel({
     handleSnap,
     manualRotate,
     maxFramerate,
+    runDealingAnimation,
   ]);
 
   return (

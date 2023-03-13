@@ -1,3 +1,9 @@
+:root {
+  --shadow-width: 10px;
+  --shadow-opacity: 0.3;
+  --shadow-space-from-card: 15px;
+}
+
 .card-container {
   position: absolute;
   transform-style: preserve-3d;
@@ -31,10 +37,13 @@
 
 .card-shadow {
   background-color: black;
-  opacity: 0.3;
-  height: 10px;
+  opacity: var(--shadow-opacity);
+  height: var(--shadow-width);
   border-radius: 70%;
-  transform: rotateX(90deg) translateZ(-10px);
+  transform: rotateX(90deg)
+    translateZ(
+      calc(-1 * (var(--shadow-space-from-card) - (var(--shadow-width) / 2)))
+    );
 }
 
 .card-debug-id {
