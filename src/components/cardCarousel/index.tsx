@@ -275,7 +275,7 @@ function CardCarousel({
             const delay = (numberOfCards - i - 1) * dealingDelay * 1000;
             const direction = dealingDirection === "toward" ? 1 : -1;
             const cardDegree = cardSingleAngle * i;
-            const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) translateZ(calc(${SHADOW_WIDTH} / 2 + ${
+            const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) translateZ(calc(${SHADOW_WIDTH} + ${
               i + 1
             }px))`;
 

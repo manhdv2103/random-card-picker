@@ -20,5 +20,6 @@
     rgba(192, 0, 200, 1) 93%
   );
   transform-style: preserve-3d;
-  transform: translateY(-30%) rotateX(90deg);
+  transform: translateY(-184px) rotateX(90deg);
+  opacity: 0.7;
 }
