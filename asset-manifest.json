@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.css": "/random-card-picker/static/css/main.615d7ddb.css",
-    "main.js": "/random-card-picker/static/js/main.8a04aab4.js",
+    "main.css": "/random-card-picker/static/css/main.bbc7530e.css",
+    "main.js": "/random-card-picker/static/js/main.5c727549.js",
     "static/media/background.png": "/random-card-picker/static/media/background.e8b785bb59800c6cfd33.png",
     "static/media/card-back.png": "/random-card-picker/static/media/card-back.29d746b6f70b6fd9953b.png",
     "static/media/card-fiveDollar.png": "/random-card-picker/static/media/card-fiveDollar.6bb2963b0982735914c4.png",
     "static/media/card-nothing.png": "/random-card-picker/static/media/card-nothing.c88f54be217f728956a8.png",
     "index.html": "/random-card-picker/index.html",
-    "main.615d7ddb.css.map": "/random-card-picker/static/css/main.615d7ddb.css.map",
-    "main.8a04aab4.js.map": "/random-card-picker/static/js/main.8a04aab4.js.map"
+    "main.bbc7530e.css.map": "/random-card-picker/static/css/main.bbc7530e.css.map",
+    "main.5c727549.js.map": "/random-card-picker/static/js/main.5c727549.js.map"
   },
   "entrypoints": [
-    "static/css/main.615d7ddb.css",
-    "static/js/main.8a04aab4.js"
+    "static/css/main.bbc7530e.css",
+    "static/js/main.5c727549.js"
   ]
 }
