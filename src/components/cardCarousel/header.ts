@@ -168,7 +168,7 @@ export type Click = {
 /**
  * Difference in pixels between the cursor's up and down positions to be reconigned as a click
  */
-export const CLICK_PIXEL_THRESHOLD = 2;
+export const CLICK_PIXEL_THRESHOLD = 2; // px
 
 /**
  * Rate of cursor position tracking to calculate kinetic scrolling velocity
