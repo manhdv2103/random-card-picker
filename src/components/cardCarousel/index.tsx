@@ -8,6 +8,7 @@ import {
   CLICK_PIXEL_THRESHOLD,
   Cursor,
   Dealing,
+  DEALING_FINISH_SKEW_DEGREE,
   KineticTracking,
   KINETIC_SNAPPING_VELOCITY_LOWER_BOUND,
   KINETIC_STOP_DEGREE,
@@ -298,7 +299,7 @@ function CardCarousel({
                 {
                   transform: `${startState} translateY(${
                     direction * cardDistance
-                  }px) translateZ(${dealingFlyHeight}px) rotateX(-90deg)`,
+                  }px) translateZ(${dealingFlyHeight}px) rotateX(-${DEALING_FINISH_SKEW_DEGREE}deg)`,
                 },
                 {
                   transform: `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${cardDegree}deg)`,

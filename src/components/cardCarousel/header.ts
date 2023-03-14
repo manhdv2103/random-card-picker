@@ -190,3 +190,8 @@ export const KINETIC_VELOCITY_LOWER_BOUND = 10; // deg/s
  * Much higher than `KINETIC_VELOCITY_LOWER_BOUND` to spare some lower velocity scroll handling for snapping
  */
 export const KINETIC_SNAPPING_VELOCITY_LOWER_BOUND = 300; // deg/s
+
+/**
+ * Degree in deg to skew the card just before it's finished being dealed
+ */
+export const DEALING_FINISH_SKEW_DEGREE = 60; //deg
