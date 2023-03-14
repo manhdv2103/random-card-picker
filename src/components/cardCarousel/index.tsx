@@ -40,6 +40,7 @@ function CardCarousel({
   dealingDeckDistanceFromCenter,
   dealingDirection,
   dealingDuration,
+  dealingDelay,
   dealingFlyHeight,
   cardDistance,
   cardSnapping,
@@ -271,7 +272,7 @@ function CardCarousel({
 
             const { cardContainer, cardShadow } = cardRef;
 
-            const delay = (numberOfCards - i - 1) * 300;
+            const delay = (numberOfCards - i - 1) * dealingDelay * 1000;
             const direction = dealingDirection === "toward" ? 1 : -1;
             const cardDegree = cardSingleAngle * i;
             const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) translateZ(calc(${SHADOW_WIDTH} / 2 + ${
@@ -340,6 +341,7 @@ function CardCarousel({
       cardSingleAngle,
       dealingAnimationOption,
       dealingDeckDistanceFromCenter,
+      dealingDelay,
       dealingDirection,
       dealingFlyHeight,
       numberOfCards,

@@ -60,9 +60,14 @@ export type CardCarouselProps = {
   dealingDirection: "toward" | "away";
 
   /**
-   * Duration in seconds for the dealing animation to finish
+   * Duration in seconds for a single card from the deck to the finish position
    */
   dealingDuration: number;
+
+  /**
+   * Delay in seconds between each dealed card
+   */
+  dealingDelay: number;
 
   /**
    * Height in pixels for the card to fly up when dealing
