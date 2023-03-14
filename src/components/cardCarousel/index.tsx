@@ -38,6 +38,7 @@ function CardCarousel({
   kineticDecelerationRate,
   manualRotate = true,
   manualRotateDistance,
+  dealingAnimation = true,
   dealingDeckDistanceFromCenter,
   dealingDirection,
   dealingDuration,
@@ -264,76 +265,81 @@ function CardCarousel({
     (finishCallback: () => void) => {
       switch (dealingRef.current.state) {
         case "dealing":
-          const animations: Animation[] = [];
-          cardsRef.current.forEach((cardRef, i) => {
-            if (
-              !cardRef?.cardContainer ||
-              !cardRef?.card ||
-              !cardRef?.cardShadow
-            )
-              return;
+          if (dealingAnimation) {
+            const animations: Animation[] = [];
+            cardsRef.current.forEach((cardRef, i) => {
+              if (
+                !cardRef?.cardContainer ||
+                !cardRef?.card ||
+                !cardRef?.cardShadow
+              )
+                return;
 
-            const { cardContainer, cardShadow } = cardRef;
+              const { cardContainer, cardShadow } = cardRef;
 
-            const delay = (numberOfCards - i - 1) * dealingDelay * 1000;
-            const direction = dealingDirection === "toward" ? 1 : -1;
-            const cardDegree = cardSingleAngle * i;
-            const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) translateZ(calc(${SHADOW_WIDTH} + ${
-              i + 1
-            }px))`;
+              const delay = (numberOfCards - i - 1) * dealingDelay * 1000;
+              const direction = dealingDirection === "toward" ? 1 : -1;
+              const cardDegree = cardSingleAngle * i;
+              const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) translateZ(calc(${SHADOW_WIDTH} + ${
+                i + 1
+              }px))`;
 
-            const animationOption: KeyframeAnimationOptions = {
-              ...dealingAnimationOption,
-              delay,
-            };
+              const animationOption: KeyframeAnimationOptions = {
+                ...dealingAnimationOption,
+                delay,
+              };
 
-            cardContainer.style.transform = startState;
-            const animation = cardContainer.animate(
-              [
-                {
-                  transform: startState,
-                },
-                {
-                  transform: `${startState} translateY(${
-                    direction * cardDistance
-                  }px)`,
-                },
-                {
-                  transform: `${startState} translateY(${
-                    direction * cardDistance
-                  }px) translateZ(${dealingFlyHeight}px) rotateX(-${DEALING_FINISH_SKEW_DEGREE}deg)`,
-                },
-                {
-                  transform: `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${cardDegree}deg)`,
-                },
-              ],
-              animationOption
-            );
+              cardContainer.style.transform = startState;
+              const animation = cardContainer.animate(
+                [
+                  {
+                    transform: startState,
+                  },
+                  {
+                    transform: `${startState} translateY(${
+                      direction * cardDistance
+                    }px)`,
+                  },
+                  {
+                    transform: `${startState} translateY(${
+                      direction * cardDistance
+                    }px) translateZ(${dealingFlyHeight}px) rotateX(-${DEALING_FINISH_SKEW_DEGREE}deg)`,
+                  },
+                  {
+                    transform: `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${cardDegree}deg)`,
+                  },
+                ],
+                animationOption
+              );
 
-            cardShadow.style.opacity = "0";
-            cardShadow.animate(
-              [
-                { opacity: 0 },
-                { opacity: 0 },
-                { opacity: 0 },
-                { opacity: SHADOW_OPACITY },
-              ],
-              animationOption
-            );
+              cardShadow.style.opacity = "0";
+              cardShadow.animate(
+                [
+                  { opacity: 0 },
+                  { opacity: 0 },
+                  { opacity: 0 },
+                  { opacity: SHADOW_OPACITY },
+                ],
+                animationOption
+              );
 
-            animations.push(animation);
+              animations.push(animation);
 
-            // the animation deals from the last card to the first one
-            if (i === 0) {
-              animation.addEventListener("finish", () => {
-                dealingRef.current.state = "done_dealing";
-                finishCallback();
+              // the animation deals from the last card to the first one
+              if (i === 0) {
+                animation.addEventListener("finish", () => {
+                  dealingRef.current.state = "done_dealing";
+                  finishCallback();
 
-                // let others do the rest
-                animations.forEach(a => a.cancel());
-              });
-            }
-          });
+                  // let others do the rest
+                  animations.forEach(a => a.cancel());
+                });
+              }
+            });
+          } else {
+            dealingRef.current.state = "done_dealing";
+            finishCallback();
+          }
           break;
         case "done_dealing":
           finishCallback();
@@ -342,6 +348,7 @@ function CardCarousel({
     [
       cardDistance,
       cardSingleAngle,
+      dealingAnimation,
       dealingAnimationOption,
       dealingDeckDistanceFromCenter,
       dealingDelay,

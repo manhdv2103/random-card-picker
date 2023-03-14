@@ -50,6 +50,12 @@ export type CardCarouselProps = {
   manualRotateDistance: number;
 
   /**
+   * Play the dealing animation at the start of the 'game'
+   * @default true
+   */
+  dealingAnimation?: boolean;
+
+  /**
    * Distance in pixels of the dealing deck from the center of the carousel
    */
   dealingDeckDistanceFromCenter: number;
