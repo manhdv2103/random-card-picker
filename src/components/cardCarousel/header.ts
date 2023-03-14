@@ -113,6 +113,10 @@ export type Cursor = {
   pressed: boolean;
 };
 
+export type Dealing = {
+  state: "dealing" | "done_dealing";
+};
+
 export type Snapping = {
   state: "pre_snapping" | "snapping" | "done_snapping";
   goal: number;

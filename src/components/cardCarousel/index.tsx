@@ -7,6 +7,7 @@ import {
   Click,
   CLICK_PIXEL_THRESHOLD,
   Cursor,
+  Dealing,
   KineticTracking,
   KINETIC_SNAPPING_VELOCITY_LOWER_BOUND,
   KINETIC_STOP_DEGREE,
@@ -84,6 +85,7 @@ function CardCarousel({
   const lastCursorRef = useRef<Cursor | null>(null);
   const clickRef = useRef<Click>({ downCursor: null, clicked: false });
 
+  const dealingRef = useRef<Dealing>({ state: "dealing" });
   const snappingRef = useRef<Snapping>({ state: "pre_snapping", goal: 0 });
   const revealingRef = useRef<Revealing>({
     state: "pre_revealing",
@@ -248,66 +250,77 @@ function CardCarousel({
   // Dealing animation
   const runDealingAnimation = useCallback(
     (finishCallback: () => void) => {
-      const animations: Animation[] = [];
-      cardsRef.current.forEach((cardRef, i) => {
-        if (!cardRef?.cardContainer || !cardRef?.card || !cardRef?.cardShadow)
-          return;
+      switch (dealingRef.current.state) {
+        case "dealing":
+          const animations: Animation[] = [];
+          cardsRef.current.forEach((cardRef, i) => {
+            if (
+              !cardRef?.cardContainer ||
+              !cardRef?.card ||
+              !cardRef?.cardShadow
+            )
+              return;
 
-        const { cardContainer, cardShadow } = cardRef;
+            const { cardContainer, cardShadow } = cardRef;
 
-        const delay = (numberOfCards - i - 1) * 300;
-        const direction = dealingDirection === "toward" ? 1 : -1;
-        const cardDegree = cardSingleAngle * i;
-        const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) translateZ(calc(${SHADOW_WIDTH} / 2 + ${
-          i + 1
-        }px))`;
+            const delay = (numberOfCards - i - 1) * 300;
+            const direction = dealingDirection === "toward" ? 1 : -1;
+            const cardDegree = cardSingleAngle * i;
+            const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) translateZ(calc(${SHADOW_WIDTH} / 2 + ${
+              i + 1
+            }px))`;
 
-        cardContainer.style.transform = startState;
-        const animation = cardContainer.animate(
-          [
-            {
-              transform: startState,
-            },
-            {
-              transform: `${startState} translateY(${
-                direction * cardDistance
-              }px)`,
-            },
-            {
-              transform: `${startState} translateY(${
-                direction * cardDistance
-              }px) translateZ(${dealingFlyHeight}px) rotateX(-90deg)`,
-            },
-            {
-              transform: `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${cardDegree}deg)`,
-            },
-          ],
-          { ...DEALING_ANIMATION_OPTION, delay }
-        );
+            cardContainer.style.transform = startState;
+            const animation = cardContainer.animate(
+              [
+                {
+                  transform: startState,
+                },
+                {
+                  transform: `${startState} translateY(${
+                    direction * cardDistance
+                  }px)`,
+                },
+                {
+                  transform: `${startState} translateY(${
+                    direction * cardDistance
+                  }px) translateZ(${dealingFlyHeight}px) rotateX(-90deg)`,
+                },
+                {
+                  transform: `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${cardDegree}deg)`,
+                },
+              ],
+              { ...DEALING_ANIMATION_OPTION, delay }
+            );
 
-        cardShadow.style.opacity = "0";
-        cardShadow.animate(
-          [
-            { opacity: 0 },
-            { opacity: 0 },
-            { opacity: 0 },
-            { opacity: SHADOW_OPACITY },
-          ],
-          { ...DEALING_ANIMATION_OPTION, delay }
-        );
+            cardShadow.style.opacity = "0";
+            cardShadow.animate(
+              [
+                { opacity: 0 },
+                { opacity: 0 },
+                { opacity: 0 },
+                { opacity: SHADOW_OPACITY },
+              ],
+              { ...DEALING_ANIMATION_OPTION, delay }
+            );
 
-        animations.push(animation);
+            animations.push(animation);
 
-        // the animation deals from the last card to the first one
-        if (i === 0) {
-          animation.addEventListener("finish", () => {
-            finishCallback();
+            // the animation deals from the last card to the first one
+            if (i === 0) {
+              animation.addEventListener("finish", () => {
+                dealingRef.current.state = "done_dealing";
+                finishCallback();
 
-            // let others do the rest
-            animations.forEach(a => a.cancel());
+                // let others do the rest
+                animations.forEach(a => a.cancel());
+              });
+            }
           });
-        }
-      });
+          break;
+        case "done_dealing":
+          finishCallback();
+      }
     },
     [
       cardDistance,

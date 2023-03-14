@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
+import background from "./assets/background.png";
 import fiveDollar from "./assets/card-fiveDollar.png";
 import nothing from "./assets/card-nothing.png";
-import background from "./assets/background.png";
 import CardCarousel from "./components/cardCarousel";
 
 const MAX_CARD_DISTANCE = 200;
