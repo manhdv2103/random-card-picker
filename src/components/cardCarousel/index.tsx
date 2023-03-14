@@ -181,6 +181,8 @@ function CardCarousel({
       if (cardSnapping) {
         kineticTracking.goal =
           Math.ceil(kineticTracking.goal / cardSingleAngle) * cardSingleAngle;
+        kineticTracking.amplitude =
+          kineticTracking.goal - lastCarouselDegreeRef.current;
       }
 
       kineticTracking.state = "kinetic_scrolling";
