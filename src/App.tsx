@@ -39,12 +39,14 @@ function App() {
             manualRotateDistance={1000}
             kineticRotateWeight={10}
             kineticDecelerationRate={325}
+            dealingDuration={1.2}
             dealingDeckDistanceFromCenter={220}
             dealingDirection="away"
             dealingFlyHeight={100}
             cardDistance={cardDistance}
             cardSnapping
             cardSnappingTime={5}
+            cardRevealingDuration={0.5}
             cardProps={{
               cardFloatingDelta: 12,
               cardFloatingTime: 3,

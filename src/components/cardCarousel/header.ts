@@ -60,6 +60,11 @@ export type CardCarouselProps = {
   dealingDirection: "toward" | "away";
 
   /**
+   * Duration in seconds for the dealing animation to finish
+   */
+  dealingDuration: number;
+
+  /**
    * Height in pixels for the card to fly up when dealing
    */
   dealingFlyHeight: number;
@@ -79,6 +84,11 @@ export type CardCarouselProps = {
    * Time in seconds to finish 1 hypothetical round of rotation used when the card is snapping
    */
   cardSnappingTime: number;
+
+  /**
+   * Duraction in seconds fot the card to be revealed/unrevealed
+   */
+  cardRevealingDuration: number;
 
   /**
    * Max FPS to render (not very accurate). The default is unlimited

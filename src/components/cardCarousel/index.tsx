@@ -27,18 +27,6 @@ const SHADOW_SPACE_FROM_CARD = windowStyle.getPropertyValue(
 const SHADOW_WIDTH = windowStyle.getPropertyValue("--shadow-width");
 const SHADOW_OPACITY = windowStyle.getPropertyValue("--shadow-opacity");
 
-// Animation options
-const DEALING_ANIMATION_OPTION: KeyframeAnimationOptions = {
-  duration: 1300,
-  fill: "forwards",
-  easing: "ease",
-};
-const REVEAL_ANIMATION_OPTION: KeyframeAnimationOptions = {
-  duration: 500,
-  fill: "forwards",
-  easing: "ease-in-out",
-};
-
 function CardCarousel({
   interactionContainerRef,
   numberOfCards,
@@ -51,10 +39,12 @@ function CardCarousel({
   manualRotateDistance,
   dealingDeckDistanceFromCenter,
   dealingDirection,
+  dealingDuration,
   dealingFlyHeight,
   cardDistance,
   cardSnapping,
   cardSnappingTime,
+  cardRevealingDuration,
   maxFramerate,
   cardProps,
   cardContents,
@@ -114,6 +104,24 @@ function CardCarousel({
         carouselSnappingDegreePerMs,
       };
     }, [autoRotateTime, cardSnappingTime, numberOfCards]);
+
+  const dealingAnimationOption: KeyframeAnimationOptions = useMemo(
+    () => ({
+      duration: dealingDuration * 1000,
+      fill: "forwards",
+      easing: "ease",
+    }),
+    [dealingDuration]
+  );
+
+  const cardRevealingAnimationOption: KeyframeAnimationOptions = useMemo(
+    () => ({
+      duration: cardRevealingDuration * 1000,
+      fill: "forwards",
+      easing: "ease-in-out",
+    }),
+    [cardRevealingDuration]
+  );
 
   const cardFrontImgs = useMemo(
     () =>
@@ -270,6 +278,11 @@ function CardCarousel({
               i + 1
             }px))`;
 
+            const animationOption: KeyframeAnimationOptions = {
+              ...dealingAnimationOption,
+              delay,
+            };
+
             cardContainer.style.transform = startState;
             const animation = cardContainer.animate(
               [
@@ -290,7 +303,7 @@ function CardCarousel({
                   transform: `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${cardDegree}deg)`,
                 },
               ],
-              { ...DEALING_ANIMATION_OPTION, delay }
+              animationOption
             );
 
             cardShadow.style.opacity = "0";
@@ -301,7 +314,7 @@ function CardCarousel({
                 { opacity: 0 },
                 { opacity: SHADOW_OPACITY },
               ],
-              { ...DEALING_ANIMATION_OPTION, delay }
+              animationOption
             );
 
             animations.push(animation);
@@ -325,6 +338,7 @@ function CardCarousel({
     [
       cardDistance,
       cardSingleAngle,
+      dealingAnimationOption,
       dealingDeckDistanceFromCenter,
       dealingDirection,
       dealingFlyHeight,
@@ -489,7 +503,7 @@ function CardCarousel({
                 transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
               },
             ],
-            REVEAL_ANIMATION_OPTION
+            cardRevealingAnimationOption
           ),
           selectedCard.card.animate(
             [
@@ -497,7 +511,7 @@ function CardCarousel({
                 transform: "translateY(0px)",
               },
             ],
-            REVEAL_ANIMATION_OPTION
+            cardRevealingAnimationOption
           ),
           selectedCard.cardShadow.animate(
             [
@@ -507,7 +521,7 @@ function CardCarousel({
                 }`,
               },
             ],
-            REVEAL_ANIMATION_OPTION
+            cardRevealingAnimationOption
           ),
         ];
 
@@ -529,7 +543,7 @@ function CardCarousel({
         break;
       case "unrevealing": // do nothing
     }
-  }, [cardSingleAngle, numberOfCards]);
+  }, [cardRevealingAnimationOption, cardSingleAngle, numberOfCards]);
 
   // Main loop
   useEffect(() => {
