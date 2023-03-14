@@ -39,8 +39,8 @@ function App() {
             manualRotateDistance={1000}
             kineticRotateWeight={10}
             kineticDecelerationRate={325}
-            dealingDuration={1}
-            dealingDelay={0.25}
+            dealingDuration={0.7}
+            dealingDelay={0.2}
             dealingDeckDistanceFromCenter={220}
             dealingDirection="away"
             dealingFlyHeight={100}
