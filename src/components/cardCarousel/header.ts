@@ -50,10 +50,36 @@ export type CardCarouselProps = {
   manualRotateDistance: number;
 
   /**
-   * Play the dealing animation at the start of the 'game'
+   * Play the first (shuffling and/or dealing) animation at the start of the 'game'
    * @default true
    */
-  dealingAnimation?: boolean;
+  firstAnimation?: boolean;
+
+  /**
+   * Play the shuffling animation at the start of the 'game'
+   * @default true
+   */
+  shufflingAnimation?: boolean;
+
+  /**
+   * Number of shuffles
+   */
+  numberOfShuffling: number;
+
+  /**
+   * Max distance in pixels to move the cards outward when shuffling
+   */
+  shufflingMaxDistance: number;
+
+  /**
+   * Height in pixels from the ground of the deck when shuffling
+   */
+  shufflingHeight: number;
+
+  /**
+   * Duration in seconds for a single shuffle
+   */
+  shufflingDuration: number;
 
   /**
    * Distance in pixels of the dealing deck from the center of the carousel
@@ -134,8 +160,8 @@ export type Cursor = {
   pressed: boolean;
 };
 
-export type Dealing = {
-  state: "dealing" | "done_dealing";
+export type FirstAnimation = {
+  state: "running" | "done_running";
 };
 
 export type Snapping = {
@@ -201,3 +227,8 @@ export const KINETIC_SNAPPING_VELOCITY_LOWER_BOUND = 300; // deg/s
  * Degree in deg to skew the card just before it's finished being dealed
  */
 export const DEALING_FINISH_SKEW_DEGREE = 60; //deg
+
+/**
+ * Transition time from other animation to dealing animation
+ */
+export const TO_DEALING_DURATION = 600; // ms
