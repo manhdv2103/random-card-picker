@@ -1,4 +1,6 @@
 :root {
+  --card-width: 60px;
+  --card-height: 100px;
   --shadow-width: 10px;
   --shadow-opacity: 0.3;
   --shadow-space-from-card: 15px;
@@ -10,8 +12,8 @@
 }
 
 .card {
-  width: 60px;
-  height: 100px;
+  width: var(--card-width);
+  height: var(--card-height);
   transform-style: preserve-3d;
 }
 
