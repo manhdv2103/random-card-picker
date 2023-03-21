@@ -7,8 +7,8 @@ import {
   Click,
   CLICK_PIXEL_THRESHOLD,
   Cursor,
-  FirstAnimation,
   DEALING_FINISH_SKEW_DEGREE,
+  FirstAnimation,
   KineticTracking,
   KINETIC_SNAPPING_VELOCITY_LOWER_BOUND,
   KINETIC_STOP_DEGREE,
@@ -795,7 +795,10 @@ export default CardCarousel;
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
-function throttle(callback: Function, interval: number) {
+function throttle<T extends (...args: any[]) => any>(
+  callback: T,
+  interval: number
+): T {
   let enableCall = true;
 
   return function (...args: any[]) {
@@ -804,7 +807,7 @@ function throttle(callback: Function, interval: number) {
     enableCall = false;
     callback.apply(this, args);
     setTimeout(() => (enableCall = true), interval);
-  };
+  } as T;
 }
 
 function shuffle(arr: any[]) {
