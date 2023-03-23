@@ -319,15 +319,6 @@ function CardCarousel({
             const layer = `translateZ(calc(${shufflingHeight}px + ${SHADOW_WIDTH} + ${
               idx + 1
             }px))`;
-            if (i !== 0) {
-              res.push({
-                transform: `${startState} ${layer} translateY(calc(${
-                  // split the deck into 2
-                  arr[i - 1] < numberOfCards / 2 ? -1 : 1
-                } * ${shufflingMaxDistance}px))`,
-              });
-            }
-
             res.push({
               transform: `${startState} ${layer} translateY(0px)`,
             });
@@ -338,6 +329,11 @@ function CardCarousel({
                   // split the deck into 2
                   idx < numberOfCards / 2 ? -1 : 1
                 } * ${shufflingMaxDistance}px))`,
+              });
+            } else {
+              // lengthen the rest state after shuffling
+              res.push({
+                transform: `${startState} ${layer} translateY(0px)`,
               });
             }
 
