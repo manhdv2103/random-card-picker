@@ -81,14 +81,22 @@ const Card = forwardRef<CardRef, CardProps>(
       <div ref={cardContainerRef} className="card-container" data-id={id}>
         <div ref={cardRef} className="card" style={size}>
           <div className="card-face card-face_back">
-            <img draggable={false} src={backImage} alt={`card ${id}'s back`} />
+            {backImage && (
+              <img
+                draggable={false}
+                src={backImage}
+                alt={`card ${id}'s back`}
+              />
+            )}
           </div>
           <div className="card-face card-face_front">
-            <img
-              draggable={false}
-              src={frontImage}
-              alt={`card ${id}'s front`}
-            />
+            {frontImage && (
+              <img
+                draggable={false}
+                src={frontImage}
+                alt={`card ${id}'s front`}
+              />
+            )}
           </div>
           {debug && <span className="card-debug-id">{id}</span>}
         </div>
