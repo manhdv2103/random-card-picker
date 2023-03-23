@@ -309,10 +309,8 @@ function CardCarousel({
           // transpose to make the indices card-independence
           Array(numberOfShuffling + 1)
             .fill(Array.from(Array(numberOfCards).keys()))
-            // leave the first and last states intact
-            .map((arr, i) =>
-              i > 0 && i <= numberOfShuffling ? shuffle(arr) : arr
-            )
+            // leave the last states intact
+            .map((arr, i) => (i < numberOfShuffling ? shuffle(arr) : arr))
         );
 
         const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) rotateZ(90deg)`;
