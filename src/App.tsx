@@ -39,10 +39,10 @@ function App() {
             manualRotateDistance={1000}
             kineticRotateWeight={10}
             kineticDecelerationRate={325}
-            numberOfShuffling={10}
-            shufflingMaxDistance={55}
+            numberOfShuffling={12}
+            shufflingMaxDistance={70}
             shufflingHeight={100}
-            shufflingDuration={0.2}
+            shufflingDuration={0.18}
             dealingDuration={0.7}
             dealingDelay={0.2}
             dealingDeckDistanceFromCenter={220}
