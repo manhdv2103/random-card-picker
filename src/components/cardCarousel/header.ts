@@ -128,6 +128,12 @@ export type CardCarouselProps = {
   cardRevealingDuration: number;
 
   /**
+   * Distance in pixels from the nearest card (faces toward the screen) to the back of the carousel
+   * so that only the cards whose position is in between can be revealed
+   */
+  cardRevealLimitDistance: number;
+
+  /**
    * Max FPS to render (not very accurate). The default is unlimited
    */
   maxFramerate?: number;

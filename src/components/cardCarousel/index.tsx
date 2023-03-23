@@ -54,6 +54,7 @@ function CardCarousel({
   cardSnapping,
   cardSnappingTime,
   cardRevealingDuration,
+  cardRevealLimitDistance,
   maxFramerate,
   cardProps,
   cardContents,
@@ -62,9 +63,14 @@ function CardCarousel({
   // Element refs
   const [carousel, setCarousel] = useState<HTMLDivElement | null>();
   const cardsRef = useRef<(CardRef | null)[]>([]);
+  const [revealBarrier, setRevealBarrier] = useState<HTMLDivElement | null>();
 
   const handleCarousel = useCallback(
     (el: HTMLDivElement) => setCarousel(el),
+    []
+  );
+  const handleRevealBarrier = useCallback(
+    (el: HTMLDivElement) => setRevealBarrier(el),
     []
   );
   const handleCard = useCallback((el: CardRef | null, i: number) => {
@@ -101,18 +107,30 @@ function CardCarousel({
   });
 
   // Derived states
-  const { carouselDegreePerMs, cardSingleAngle, carouselSnappingDegreePerMs } =
-    useMemo(() => {
-      const carouselDegreePerMs = 360 / (autoRotateTime * 1000);
-      const cardSingleAngle = 360 / numberOfCards;
-      const carouselSnappingDegreePerMs = 360 / (cardSnappingTime * 1000);
+  const {
+    carouselDegreePerMs,
+    cardSingleAngle,
+    carouselSnappingDegreePerMs,
+    cardRevealLimitFromCenter,
+  } = useMemo(() => {
+    const carouselDegreePerMs = 360 / (autoRotateTime * 1000);
+    const cardSingleAngle = 360 / numberOfCards;
+    const carouselSnappingDegreePerMs = 360 / (cardSnappingTime * 1000);
+    const cardRevealLimitFromCenter = cardDistance - cardRevealLimitDistance;
 
-      return {
-        carouselDegreePerMs,
-        cardSingleAngle,
-        carouselSnappingDegreePerMs,
-      };
-    }, [autoRotateTime, cardSnappingTime, numberOfCards]);
+    return {
+      carouselDegreePerMs,
+      cardSingleAngle,
+      carouselSnappingDegreePerMs,
+      cardRevealLimitFromCenter,
+    };
+  }, [
+    autoRotateTime,
+    cardDistance,
+    cardRevealLimitDistance,
+    cardSnappingTime,
+    numberOfCards,
+  ]);
 
   const shufflingAnimationOption: KeyframeAnimationOptions = useMemo(
     () => ({
@@ -576,33 +594,12 @@ function CardCarousel({
   const handleReveal = useCallback(() => {
     const revealing = revealingRef.current;
 
-    // FIXME: handle card reveal when autoRotate is enable
-    // Maybe pause the carousel when revealing and continue rotating when not
-
     switch (revealing.state) {
       case "pre_revealing":
         const clickedCardId = clickRef.current.clickedCardId;
-        // FIXME: handle card reveal when snapping is disabled
-        const snappingState = snappingRef.current.state;
-        const centerCardId = snappingRef.current.snappedCard?.getId();
+        if (clickedCardId === undefined) return;
 
-        if (
-          snappingState !== "done_snapping" ||
-          clickedCardId === undefined ||
-          centerCardId === undefined
-        )
-          return;
-
-        // Only allow to reveal 3 cards nearest to the screen
-        if (
-          !(
-            clickedCardId === centerCardId ||
-            clickedCardId === mod(centerCardId - 1, numberOfCards) ||
-            clickedCardId === mod(centerCardId + 1, numberOfCards)
-          )
-        )
-          return;
-
+        const selectedCardAngle = clickedCardId * cardSingleAngle;
         const selectedCard = cardsRef.current.find(
           card => card?.getId() === clickedCardId
         );
@@ -620,15 +617,16 @@ function CardCarousel({
         revealing.state = "revealing";
 
         // Find the nearest path for the selected card to travel to the front
-        const centerCardIdAlternate =
-          Math.sign(centerCardId - clickedCardId) *
-          (centerCardId - numberOfCards);
-        const cardAngle =
-          cardSingleAngle *
-          (Math.abs(clickedCardId - centerCardId) <=
-          Math.abs(clickedCardId - centerCardIdAlternate)
-            ? centerCardId
-            : centerCardIdAlternate);
+        // Very magical, but it works, so don't ask me
+        const angleDirection =
+          Math.trunc(
+            clamp(
+              (selectedCardAngle + lastCarouselDegreeRef.current) / 180 - 2,
+              -1,
+              1
+            )
+          ) + 1;
+        const cardAngle = angleDirection * 360 - lastCarouselDegreeRef.current;
 
         const revealAnimations: Animation[] = [
           selectedCard.cardContainer.animate(
@@ -677,11 +675,11 @@ function CardCarousel({
         break;
       case "unrevealing": // do nothing
     }
-  }, [cardRevealingAnimationOption, cardSingleAngle, numberOfCards]);
+  }, [cardRevealingAnimationOption, cardSingleAngle]);
 
   // Main loop
   useEffect(() => {
-    if (!carousel || !cardsRef.current.length) return;
+    if (!carousel || !revealBarrier || !cardsRef.current.length) return;
 
     runFirstAnimation(() => {
       runCardsFloatingAnimation();
@@ -733,6 +731,9 @@ function CardCarousel({
         lastCarouselDegreeRef.current = carouselDegree;
         carousel.style.transform = `rotateY(${carouselDegree}deg)`;
 
+        // Render reveal barrier
+        revealBarrier.style.transform = `rotateY(-${carouselDegree}deg) translateZ(${cardRevealLimitFromCenter}px)`;
+
         // Render cards
         cardsRef.current.forEach((cardRef, i) => {
           if (revealingRef.current.revealId === i) return;
@@ -756,6 +757,7 @@ function CardCarousel({
   }, [
     autoRotate,
     cardDistance,
+    cardRevealLimitFromCenter,
     cardSingleAngle,
     cardSnapping,
     carousel,
@@ -766,6 +768,7 @@ function CardCarousel({
     handleSnap,
     manualRotate,
     maxFramerate,
+    revealBarrier,
     runCardsFloatingAnimation,
     runDealingAnimation,
     runFirstAnimation,
@@ -786,6 +789,10 @@ function CardCarousel({
             {...cardProps}
           />
         ))}
+      <div
+        ref={handleRevealBarrier}
+        className={`carousel-reveal-barrier ${debug ? "debug" : ""}`}
+      />
       {debug && <div className="carousel-debug-plane" />}
     </div>
   );
@@ -834,3 +841,7 @@ function shuffle(arr: any[]) {
 function transpose(matrix: any[][]) {
   return matrix[0].map((_, i) => matrix.map(row => row[i]));
 }
+
+const clamp = (n: number, min: number, max: number) => {
+  return Math.min(Math.max(n, min), max);
+};
