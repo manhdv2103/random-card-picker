@@ -37,6 +37,14 @@
   transform: rotateY(180deg);
 }
 
+.card-face_front.card-face-empty {
+  background-color: white;
+}
+
+.card-face_back.card-face-empty {
+  background-color: red;
+}
+
 .card-shadow {
   background-color: black;
   opacity: var(--shadow-opacity);

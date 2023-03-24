@@ -80,7 +80,11 @@ const Card = forwardRef<CardRef, CardProps>(
     return (
       <div ref={cardContainerRef} className="card-container" data-id={id}>
         <div ref={cardRef} className="card" style={size}>
-          <div className="card-face card-face_back">
+          <div
+            className={`card-face card-face_back ${
+              !backImage ? "card-face-empty" : ""
+            }`}
+          >
             {backImage && (
               <img
                 draggable={false}
@@ -89,7 +93,11 @@ const Card = forwardRef<CardRef, CardProps>(
               />
             )}
           </div>
-          <div className="card-face card-face_front">
+          <div
+            className={`card-face card-face_front ${
+              !frontImage ? "card-face-empty" : ""
+            }`}
+          >
             {frontImage && (
               <img
                 draggable={false}
