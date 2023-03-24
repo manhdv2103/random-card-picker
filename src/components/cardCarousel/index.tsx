@@ -59,6 +59,7 @@ function CardCarousel({
   maxFramerate,
   cardProps,
   cardContents,
+  getRevealedCardContent,
   debug,
 }: CardCarouselProps) {
   // Element refs
@@ -167,14 +168,18 @@ function CardCarousel({
     [cardRevealingDuration]
   );
 
-  const cardFrontImgs = useMemo(
-    () =>
-      Array.from(
-        { length: numberOfCards },
-        () => cardContents[Math.floor(Math.random() * cardContents.length)]
-      ),
-    [cardContents, numberOfCards]
+  const [cardFrontImgs, setCardFrontImgs] = useState<(string | undefined)[]>(
+    []
   );
+  useEffect(() => {
+    if (!getRevealedCardContent)
+      setCardFrontImgs(
+        Array.from(
+          { length: numberOfCards },
+          () => cardContents[Math.floor(Math.random() * cardContents.length)]
+        )
+      );
+  }, [cardContents, getRevealedCardContent, numberOfCards]);
 
   // Kinetic tracking
   const kineticTrack = useCallback(() => {
@@ -623,39 +628,73 @@ function CardCarousel({
           ) + 1;
         const cardAngle = angleDirection * 360 - lastCarouselDegreeRef.current;
 
-        const revealAnimations: Animation[] = [
-          selectedCard.cardContainer.animate(
-            [
-              {
-                transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
-              },
-            ],
-            cardRevealingAnimationOption
-          ),
-          selectedCard.card.animate(
-            [
-              {
-                transform: "translateY(0px)",
-              },
-            ],
-            cardRevealingAnimationOption
-          ),
-          selectedCard.cardShadow.animate(
-            [
-              {
-                transform: `translateY(55px) ${
-                  getComputedStyle(selectedCard.cardShadow).transform
-                }`,
-              },
-            ],
-            cardRevealingAnimationOption
-          ),
-        ];
+        const reveal = () => {
+          if (
+            selectedCard?.card &&
+            selectedCard.cardContainer &&
+            selectedCard.cardShadow
+          ) {
+            const revealAnimations: Animation[] = [
+              selectedCard.cardContainer.animate(
+                [
+                  {
+                    transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
+                  },
+                ],
+                cardRevealingAnimationOption
+              ),
+              selectedCard.card.animate(
+                [
+                  {
+                    transform: "translateY(0px)",
+                  },
+                ],
+                cardRevealingAnimationOption
+              ),
+              selectedCard.cardShadow.animate(
+                [
+                  {
+                    transform: `translateY(55px) ${
+                      getComputedStyle(selectedCard.cardShadow).transform
+                    }`,
+                  },
+                ],
+                cardRevealingAnimationOption
+              ),
+            ];
 
-        revealing.cardRevealAnimations = revealAnimations;
-        revealing.cardRevealAnimations.forEach(animation => {
-          animation.onfinish = () => (revealing.state = "done_revealing");
-        });
+            revealing.cardRevealAnimations = revealAnimations;
+            revealing.cardRevealAnimations.forEach(animation => {
+              animation.onfinish = () => (revealing.state = "done_revealing");
+            });
+          }
+        };
+
+        if (getRevealedCardContent) {
+          selectedCard.startShakingAnimation();
+          getRevealedCardContent()
+            .then(content => {
+              selectedCard.stopShakingAnimation();
+
+              setCardFrontImgs(
+                Array(numberOfCards)
+                  .fill(undefined)
+                  .map((_, i) => {
+                    if (i === clickedCardId) return content;
+                    return undefined;
+                  })
+              );
+
+              reveal();
+            })
+            .catch(() => {
+              revealing.revealId = undefined;
+              revealing.state = "pre_revealing";
+              selectedCard.stopShakingAnimation();
+            });
+        } else {
+          reveal();
+        }
         break;
       case "revealing": // do nothing
         break;
@@ -670,7 +709,12 @@ function CardCarousel({
         break;
       case "unrevealing": // do nothing
     }
-  }, [cardRevealingAnimationOption, cardSingleAngle]);
+  }, [
+    cardRevealingAnimationOption,
+    cardSingleAngle,
+    getRevealedCardContent,
+    numberOfCards,
+  ]);
 
   // Main loop
   useEffect(() => {

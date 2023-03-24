@@ -144,6 +144,12 @@ export type CardCarouselProps = {
   cardContents: string[];
 
   /**
+   * If this function is available, it will be called to get the content for the revealed card
+   * instead of randomly choosing from `cardContents`
+   */
+  getRevealedCardContent?: () => Promise<string>;
+
+  /**
    * Other configuration options in the Card component
    */
   cardProps: ConfigCardProps;

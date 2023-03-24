@@ -56,8 +56,36 @@ function App() {
             cardProps={{
               cardFloatingDelta: 12,
               cardFloatingTime: 3,
+              cardShakingTime: 0.15,
             }}
             cardContents={cardContents}
+            getRevealedCardContent={() =>
+              new Promise((resolse, reject) => {
+                // mocking a real API call
+                fetch("https://api.random.org/json-rpc/4/invoke", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    method: "generateIntegers",
+                    params: {
+                      apiKey: "c7ae2556-fa9a-4b3a-b250-2eb644cb01d8",
+                      n: 1,
+                      min: 0,
+                      max: 1,
+                    },
+                    id: 1,
+                  }),
+                })
+                  .then(json => json.json())
+                  .then(data => {
+                    resolse(cardContents[data.result.random.data[0]]);
+                  })
+                  .catch(reject);
+              })
+            }
           />
         </div>
       </div>

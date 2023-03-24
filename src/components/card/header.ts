@@ -9,6 +9,16 @@ export type CardRef = {
    * TODO: Have to do this because of dealing animation. Find a better way
    */
   startFloatingAnimation: () => void;
+
+  /**
+   * Start floating animation using this function
+   */
+  startShakingAnimation: () => void;
+
+  /**
+   * Stop floating animation using this function
+   */
+  stopShakingAnimation: () => void;
 };
 
 export type ConfigCardProps = {
@@ -27,6 +37,12 @@ export type ConfigCardProps = {
    * Time in seconds for the card to finish a floating routine (low -> high -> low)
    */
   cardFloatingTime: number;
+
+  /**
+   * Time in seconds for the card to finish a floating routine (left -> right -> left)
+   * The smaller the number, the more intensive the shaking is
+   */
+  cardShakingTime: number;
 
   /**
    * Size of the card

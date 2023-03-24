@@ -15,6 +15,7 @@ const Card = forwardRef<CardRef, CardProps>(
       cardFloating = true,
       cardFloatingDelta,
       cardFloatingTime,
+      cardShakingTime,
       frontImage,
       backImage,
       size,
@@ -24,6 +25,7 @@ const Card = forwardRef<CardRef, CardProps>(
   ) => {
     const [isfloatingAnimationStarted, setIsfloatingAnimationStarted] =
       useState(false);
+    const shakingAnimationRef = useRef<Animation | undefined>();
     const cardContainerRef = useRef<HTMLDivElement | null>(null);
     const cardRef = useRef<HTMLDivElement | null>(null);
     const cardShadowRef = useRef<HTMLDivElement | null>(null);
@@ -34,6 +36,22 @@ const Card = forwardRef<CardRef, CardProps>(
       cardShadow: cardShadowRef.current,
       getId: () => id,
       startFloatingAnimation: () => setIsfloatingAnimationStarted(true),
+      startShakingAnimation: () => {
+        shakingAnimationRef.current = cardRef.current?.animate(
+          {
+            transform: ["rotate(10deg)", "rotate(-10deg)"],
+          },
+          {
+            iterations: Infinity,
+            direction: "alternate",
+            easing: "ease-in-out",
+            duration: cardShakingTime * 500,
+          }
+        );
+      },
+      stopShakingAnimation: () => {
+        shakingAnimationRef.current?.cancel();
+      },
     }));
 
     useEffect(() => {
