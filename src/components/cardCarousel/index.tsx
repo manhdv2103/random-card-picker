@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { animate } from "../../homebrew-waapi-assistant/animate";
 import Card, { extractCardId } from "../card";
 import { CardRef } from "../card/header";
 import backImg from "./../../assets/card-back.png";
@@ -154,8 +155,6 @@ function CardCarousel({
   const dealingAnimationOption: KeyframeAnimationOptions = useMemo(
     () => ({
       duration: dealingDuration * 1000,
-      fill: "forwards",
-      easing: "ease",
     }),
     [dealingDuration]
   );
@@ -391,7 +390,6 @@ function CardCarousel({
   // Dealing animation
   const runDealingAnimation = useCallback(
     (finishCallback: () => void, lastState?: Keyframe[]) => {
-      const animations: Animation[] = [];
       cardsRef.current.forEach((cardRef, i) => {
         if (!cardRef?.cardContainer || !cardRef?.card || !cardRef?.cardShadow)
           return;
@@ -411,47 +409,37 @@ function CardCarousel({
             delay,
           };
 
-          cardContainer.style.transform = startState;
-          const animation = cardContainer.animate(
-            [
-              {
-                transform: startState,
-              },
-              {
-                transform: `${startState} translateY(${
-                  direction * cardDistance
-                }px)`,
-              },
-              {
-                transform: `${startState} translateY(${
-                  direction * cardDistance
-                }px) translateZ(${dealingFlyHeight}px) rotateX(-${DEALING_FINISH_SKEW_DEGREE}deg)`,
-              },
-              {
-                transform: `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(${
-                  -cardDegree + cardSkew
-                }deg)`,
-              },
-            ],
+          const animation = animate(
+            cardContainer,
+            {
+              transform: [
+                startState,
+
+                `${startState}
+                  translateY(${direction * cardDistance}px)`,
+
+                `${startState}
+                  translateY(${direction * cardDistance}px)
+                  translateZ(${dealingFlyHeight}px)
+                  rotatex(-${DEALING_FINISH_SKEW_DEGREE}deg)`,
+
+                `rotateY(${cardDegree}deg)
+                  translateZ(${cardDistance}px)
+                  rotateY(${-cardDegree + cardSkew}deg)`,
+              ],
+            },
             animationOption
           );
 
-          cardShadow.style.opacity = "0";
-          cardShadow.animate(
+          animate(
+            cardShadow,
             [{ opacity: 0, offset: 0.8 }, { opacity: SHADOW_OPACITY }],
             animationOption
           );
 
-          animations.push(animation);
-
-          // the animation deals from the last card to the first one
+          //  the animation deals from the last card to the first one
           if (i === 0) {
-            animation.addEventListener("finish", () => {
-              // let others do the rest
-              animations.forEach(a => a.cancel());
-
-              finishCallback();
-            });
+            animation.addEventListener("finish", finishCallback);
           }
         };
 
