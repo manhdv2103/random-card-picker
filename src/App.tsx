@@ -40,11 +40,12 @@ function App() {
             kineticRotateWeight={10}
             kineticDecelerationRate={325}
             numberOfShuffling={12}
+            shufflingAnimation={false}
             shufflingMaxDistance={70}
             shufflingHeight={100}
             shufflingDuration={0.18}
-            dealingDuration={0.7}
-            dealingDelay={0.2}
+            dealingDuration={7}
+            dealingDelay={2}
             dealingDeckDistanceFromCenter={220}
             dealingDirection="away"
             dealingFlyHeight={100}
