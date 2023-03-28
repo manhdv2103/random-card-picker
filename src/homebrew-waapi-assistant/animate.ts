@@ -6,7 +6,7 @@ export type AnimationControls = {
   ): void;
 };
 
-const defaultConfig: KeyframeAnimationOptions = {
+const DEFAULT_CONFIG: KeyframeAnimationOptions = {
   fill: "forwards",
   easing: "ease-in-out",
 };
@@ -21,7 +21,7 @@ export const animate = (
 
   for (const elem of elems) {
     const animation = elem.animate(keyframes, {
-      ...defaultConfig,
+      ...DEFAULT_CONFIG,
       ...(typeof config === "number" ? { duration: config } : config),
     });
 
