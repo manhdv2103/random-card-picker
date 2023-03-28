@@ -11,6 +11,31 @@ const defaultConfig: KeyframeAnimationOptions = {
   easing: "ease-in-out",
 };
 
+export const animate = (
+  elem: HTMLElement | HTMLElement[],
+  keyframes: Keyframe[] | PropertyIndexedKeyframes,
+  config: number | KeyframeAnimationOptions
+): AnimationControls => {
+  const elems = Array.isArray(elem) ? elem : [elem];
+  const animations: Animation[] = [];
+
+  for (const elem of elems) {
+    const animation = elem.animate(keyframes, {
+      ...defaultConfig,
+      ...(typeof config === "number" ? { duration: config } : config),
+    });
+
+    animation.addEventListener("finish", () => {
+      animation.commitStyles();
+      animation.cancel();
+    });
+
+    animations.push(animation);
+  }
+
+  return createAnimationControls(animations);
+};
+
 const createAnimationControls = (
   animations: Animation[]
 ): AnimationControls => {
@@ -37,29 +62,4 @@ const createAnimationControls = (
   return {
     addEventListener,
   };
-};
-
-export const animate = (
-  elem: HTMLElement | HTMLElement[],
-  keyframes: Keyframe[] | PropertyIndexedKeyframes,
-  config: number | KeyframeAnimationOptions
-): AnimationControls => {
-  const elems = Array.isArray(elem) ? elem : [elem];
-  const animations: Animation[] = [];
-
-  for (const elem of elems) {
-    const animation = elem.animate(keyframes, {
-      ...defaultConfig,
-      ...(typeof config === "number" ? { duration: config } : config),
-    });
-
-    animation.addEventListener("finish", () => {
-      animation.commitStyles();
-      animation.cancel();
-    });
-
-    animations.push(animation);
-  }
-
-  return createAnimationControls(animations);
 };
