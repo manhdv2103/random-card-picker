@@ -11,6 +11,16 @@ const DEFAULT_CONFIG: KeyframeAnimationOptions = {
   easing: "ease-in-out",
 };
 
+/**
+ * animate a single HTML element or an array of HTML elements
+ * with a very sane default configs
+ * and a bunch of assisting features (hence the name homebrew-waapi-*assistant*)
+ *
+ * @param elem the element(s) to animate
+ * @param keyframes the keyframe array
+ * @param config the animation config object
+ * @returns the animation controls
+ */
 export const animate = (
   elem: HTMLElement | HTMLElement[],
   keyframes: Keyframe[] | PropertyIndexedKeyframes,
@@ -41,6 +51,11 @@ export const animate = (
   return createAnimationControls(animations);
 };
 
+/**
+ * Create animation controls to controls an array of animations
+ * @param animations the animation array
+ * @returns the animation controls
+ */
 const createAnimationControls = (
   animations: Animation[]
 ): AnimationControls => {
