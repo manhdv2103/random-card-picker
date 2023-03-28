@@ -1,4 +1,4 @@
-type AnimationControls = {
+export type AnimationControls = {
   addEventListener<K extends keyof AnimationEventMap>(
     type: K,
     listener: (evs: AnimationEventMap[K][]) => any,
