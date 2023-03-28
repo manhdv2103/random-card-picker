@@ -56,6 +56,7 @@ function CardCarousel({
   cardSnappingTime,
   cardRevealingDuration,
   cardRevealLimitDistance,
+  cardSkew,
   maxFramerate,
   cardProps,
   cardContents,
@@ -427,7 +428,9 @@ function CardCarousel({
                 }px) translateZ(${dealingFlyHeight}px) rotateX(-${DEALING_FINISH_SKEW_DEGREE}deg)`,
               },
               {
-                transform: `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${cardDegree}deg)`,
+                transform: `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(${
+                  -cardDegree + cardSkew
+                }deg)`,
               },
             ],
             animationOption
@@ -467,6 +470,7 @@ function CardCarousel({
     [
       cardDistance,
       cardSingleAngle,
+      cardSkew,
       dealingAnimationOption,
       dealingDeckDistanceFromCenter,
       dealingDelay,
@@ -782,8 +786,8 @@ function CardCarousel({
           const { cardContainer } = cardRef;
 
           const cardDegree = cardSingleAngle * i;
-          cardContainer.style.transform = `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(-${
-            cardDegree + carouselDegree
+          cardContainer.style.transform = `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(${
+            -(cardDegree + carouselDegree) + cardSkew
           }deg)`;
         });
       };
@@ -798,6 +802,7 @@ function CardCarousel({
     cardDistance,
     cardRevealLimitFromCenter,
     cardSingleAngle,
+    cardSkew,
     cardSnapping,
     carousel,
     handleAutoRotate,

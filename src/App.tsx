@@ -53,6 +53,7 @@ function App() {
             cardSnappingTime={5}
             cardRevealingDuration={0.5}
             cardRevealLimitDistance={70}
+            cardSkew={8}
             cardProps={{
               cardFloatingDelta: 12,
               cardFloatingTime: 3,

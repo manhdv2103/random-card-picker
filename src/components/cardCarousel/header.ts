@@ -134,6 +134,12 @@ export type CardCarouselProps = {
   cardRevealLimitDistance: number;
 
   /**
+   * Skew angle in degree to make the cards look more aesthetic,
+   * but don't skew them too much or the secrets will be revealed
+   */
+  cardSkew: number;
+
+  /**
    * Max FPS to render (not very accurate). The default is unlimited
    */
   maxFramerate?: number;
