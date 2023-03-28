@@ -31,6 +31,14 @@ const Card = forwardRef<CardRef, CardProps>(
     const cardShadowRef = useRef<HTMLDivElement | null>(null);
 
     useImperativeHandle(ref, () => ({
+      elems:
+        cardRef.current && cardContainerRef.current && cardShadowRef.current
+          ? {
+              card: cardRef.current,
+              cardContainer: cardContainerRef.current,
+              cardShadow: cardShadowRef.current,
+            }
+          : null,
       card: cardRef.current,
       cardContainer: cardContainerRef.current,
       cardShadow: cardShadowRef.current,
