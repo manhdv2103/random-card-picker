@@ -348,10 +348,8 @@ function CardCarousel({
         );
 
         cardsRef.current.forEach((cardRef, i) => {
-          if (!cardRef?.cardContainer || !cardRef?.card || !cardRef?.cardShadow)
-            return;
-
-          const { cardContainer, cardShadow } = cardRef;
+          if (!cardRef?.elems) return;
+          const { cardContainer, cardShadow } = cardRef.elems;
 
           cardShadow.style.opacity = "0";
 
@@ -391,10 +389,8 @@ function CardCarousel({
   const runDealingAnimation = useCallback(
     (finishCallback: () => void, lastState?: Keyframe[]) => {
       cardsRef.current.forEach((cardRef, i) => {
-        if (!cardRef?.cardContainer || !cardRef?.card || !cardRef?.cardShadow)
-          return;
-
-        const { cardContainer, cardShadow } = cardRef;
+        if (!cardRef?.elems) return;
+        const { cardContainer, cardShadow } = cardRef.elems;
 
         const delay = (numberOfCards - i - 1) * dealingDelay * 1000;
         const direction = dealingDirection === "toward" ? 1 : -1;
@@ -596,14 +592,7 @@ function CardCarousel({
           card => card?.getId() === clickedCardId
         );
 
-        if (
-          !(
-            selectedCard?.card &&
-            selectedCard.cardContainer &&
-            selectedCard.cardShadow
-          )
-        )
-          return;
+        if (!selectedCard?.elems) return;
 
         revealing.revealId = clickedCardId;
         revealing.state = "revealing";
@@ -621,13 +610,9 @@ function CardCarousel({
         const cardAngle = angleDirection * 360 - lastCarouselDegreeRef.current;
 
         const reveal = () => {
-          if (
-            selectedCard?.card &&
-            selectedCard.cardContainer &&
-            selectedCard.cardShadow
-          ) {
+          if (selectedCard?.elems) {
             const revealAnimations: Animation[] = [
-              selectedCard.cardContainer.animate(
+              selectedCard.elems.cardContainer.animate(
                 [
                   {
                     transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
@@ -635,7 +620,7 @@ function CardCarousel({
                 ],
                 cardRevealingAnimationOption
               ),
-              selectedCard.card.animate(
+              selectedCard.elems.card.animate(
                 [
                   {
                     transform: "translateY(0px)",
@@ -643,11 +628,11 @@ function CardCarousel({
                 ],
                 cardRevealingAnimationOption
               ),
-              selectedCard.cardShadow.animate(
+              selectedCard.elems.cardShadow.animate(
                 [
                   {
                     transform: `translateY(55px) ${
-                      getComputedStyle(selectedCard.cardShadow).transform
+                      getComputedStyle(selectedCard.elems.cardShadow).transform
                     }`,
                   },
                 ],
@@ -768,10 +753,8 @@ function CardCarousel({
         // Render cards
         cardsRef.current.forEach((cardRef, i) => {
           if (revealingRef.current.revealId === i) return;
-          if (!cardRef?.cardContainer || !cardRef?.card || !cardRef?.cardShadow)
-            return;
-
-          const { cardContainer } = cardRef;
+          if (!cardRef?.elems) return;
+          const { cardContainer } = cardRef.elems;
 
           const cardDegree = cardSingleAngle * i;
           cardContainer.style.transform = `rotateY(${cardDegree}deg) translateZ(${cardDistance}px) rotateY(${

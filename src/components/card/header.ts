@@ -1,7 +1,10 @@
 export type CardRef = {
-  card: HTMLDivElement | null;
-  cardContainer: HTMLDivElement | null;
-  cardShadow: HTMLDivElement | null;
+  elems: {
+    card: HTMLDivElement;
+    cardContainer: HTMLDivElement;
+    cardShadow: HTMLDivElement;
+  } | null;
+
   getId: () => number;
 
   /**
