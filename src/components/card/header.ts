@@ -14,12 +14,17 @@ export type CardRef = {
   startFloatingAnimation: () => void;
 
   /**
-   * Start floating animation using this function
+   * Stop floating animation using this function
+   */
+  stopFloatingAnimation: () => void;
+
+  /**
+   * Start shaking animation using this function
    */
   startShakingAnimation: () => void;
 
   /**
-   * Stop floating animation using this function
+   * Stop shaking animation using this function
    */
   stopShakingAnimation: () => void;
 };

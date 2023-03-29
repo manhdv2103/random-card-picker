@@ -110,8 +110,6 @@ function CardCarousel({
   const snappingRef = useRef<Snapping>({ state: "pre_snapping", goal: 0 });
   const revealingRef = useRef<Revealing>({
     state: "pre_revealing",
-    revealId: undefined,
-    cardRevealAnimations: [],
   });
   const kineticTrackingRef = useRef<KineticTracking>({
     state: "no_kinetic_scrolling",
@@ -154,14 +152,6 @@ function CardCarousel({
       easing: "linear",
     }),
     [numberOfShuffling, shufflingDuration]
-  );
-  const cardRevealingAnimationOption: KeyframeAnimationOptions = useMemo(
-    () => ({
-      duration: cardRevealingDuration * 1000,
-      fill: "forwards",
-      easing: "ease-in-out",
-    }),
-    [cardRevealingDuration]
   );
 
   const [cardFrontImgs, setCardFrontImgs] = useState<(string | undefined)[]>(
@@ -582,6 +572,7 @@ function CardCarousel({
 
         if (!ensureCardRef(selectedCard)) return;
 
+        revealing.revealCard = selectedCard;
         revealing.revealId = clickedCardId;
         revealing.state = "revealing";
 
@@ -598,38 +589,35 @@ function CardCarousel({
         const cardAngle = angleDirection * 360 - lastCarouselDegreeRef.current;
 
         const reveal = () => {
-          const revealAnimations: Animation[] = [
-            selectedCard.elems.cardContainer.animate(
+          const revealAnimation = branch(
+            selectedCard.elems,
+            elems => [elems.cardContainer, elems.card, elems.cardShadow],
+            [
               [
                 {
                   transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
                 },
               ],
-              cardRevealingAnimationOption
-            ),
-            selectedCard.elems.card.animate(
               [
                 {
                   transform: "translateY(0px)",
                 },
               ],
-              cardRevealingAnimationOption
-            ),
-            selectedCard.elems.cardShadow.animate(
               [
                 {
-                  transform: `translateY(55px) ${
-                    getComputedStyle(selectedCard.elems.cardShadow).transform
-                  }`,
+                  transform: `translateY(55px) %s`,
                 },
               ],
-              cardRevealingAnimationOption
-            ),
-          ];
+            ],
+            {
+              duration: cardRevealingDuration * 1000,
+              persist: false,
+            }
+          );
 
-          revealing.cardRevealAnimations = revealAnimations;
-          revealing.cardRevealAnimations.forEach(animation => {
-            animation.onfinish = () => (revealing.state = "done_revealing");
+          revealing.cardRevealAnimation = revealAnimation;
+          revealAnimation.addEventListener("finish", () => {
+            revealing.state = "done_revealing";
           });
         };
 
@@ -652,6 +640,7 @@ function CardCarousel({
             })
             .catch(() => {
               revealing.revealId = undefined;
+              revealing.revealCard = undefined;
               revealing.state = "pre_revealing";
               selectedCard.stopShakingAnimation();
             });
@@ -665,15 +654,16 @@ function CardCarousel({
         revealing.revealId = undefined;
         revealing.state = "unrevealing";
 
-        revealing.cardRevealAnimations.forEach(animation => {
-          animation.reverse();
-          animation.onfinish = () => (revealing.state = "pre_revealing");
+        revealing.cardRevealAnimation?.reverse();
+        revealing.cardRevealAnimation?.addEventListener("finish", () => {
+          revealing.state = "pre_revealing";
+          revealing.cardRevealAnimation?.cancel();
         });
         break;
       case "unrevealing": // do nothing
     }
   }, [
-    cardRevealingAnimationOption,
+    cardRevealingDuration,
     cardSingleAngle,
     getRevealedCardContent,
     numberOfCards,

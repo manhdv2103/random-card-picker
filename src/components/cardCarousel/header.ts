@@ -1,3 +1,4 @@
+import { AnimationControls } from "../../homebrew-waapi-assistant/controls";
 import { CardRef, ConfigCardProps } from "../card/header";
 
 export type CardCarouselProps = {
@@ -190,8 +191,9 @@ export type Snapping = {
 
 export type Revealing = {
   state: "pre_revealing" | "revealing" | "done_revealing" | "unrevealing";
-  revealId: number | undefined;
-  cardRevealAnimations: Animation[];
+  revealId?: number;
+  revealCard?: CardRef;
+  cardRevealAnimation?: AnimationControls;
 };
 
 export type KineticTracking = {

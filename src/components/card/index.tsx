@@ -5,6 +5,8 @@ import {
   useRef,
   useState,
 } from "react";
+import { animate } from "../../homebrew-waapi-assistant/animate";
+import { AnimationControls } from "../../homebrew-waapi-assistant/controls";
 import { CardProps, CardRef, SafeCardRef } from "./header";
 import "./styles.css";
 
@@ -25,7 +27,7 @@ const Card = forwardRef<CardRef, CardProps>(
   ) => {
     const [isfloatingAnimationStarted, setIsfloatingAnimationStarted] =
       useState(false);
-    const shakingAnimationRef = useRef<Animation | undefined>();
+    const shakingAnimationRef = useRef<AnimationControls | undefined>();
     const cardContainerRef = useRef<HTMLDivElement | null>(null);
     const cardRef = useRef<HTMLDivElement | null>(null);
     const cardShadowRef = useRef<HTMLDivElement | null>(null);
@@ -44,45 +46,45 @@ const Card = forwardRef<CardRef, CardProps>(
       cardShadow: cardShadowRef.current,
       getId: () => id,
       startFloatingAnimation: () => setIsfloatingAnimationStarted(true),
+      stopFloatingAnimation: () => setIsfloatingAnimationStarted(false),
       startShakingAnimation: () => {
-        shakingAnimationRef.current = cardRef.current?.animate(
-          {
-            transform: ["rotate(10deg)", "rotate(-10deg)"],
-          },
-          {
-            iterations: Infinity,
-            direction: "alternate",
-            easing: "ease-in-out",
-            duration: cardShakingTime * 500,
-          }
-        );
+        if (cardRef.current)
+          shakingAnimationRef.current = animate(
+            cardRef.current,
+            {
+              transform: ["%s rotate(10deg)", "%s rotate(-10deg)"],
+            },
+            {
+              iterations: Infinity,
+              direction: "alternate",
+              duration: cardShakingTime * 500,
+            }
+          );
       },
       stopShakingAnimation: () => {
-        shakingAnimationRef.current?.cancel();
+        shakingAnimationRef.current?.stop();
       },
     }));
 
     useEffect(() => {
-      let cardFloatingAnimation: Animation | undefined = undefined;
+      let cardFloatingAnimation: AnimationControls | undefined = undefined;
 
-      if (cardFloating && isfloatingAnimationStarted) {
+      if (cardFloating && isfloatingAnimationStarted && cardRef.current) {
         const halfCardFloatingDelta = cardFloatingDelta / 2;
 
-        cardFloatingAnimation = cardRef.current?.animate(
-          [
-            {
-              transform: `translateY(${-halfCardFloatingDelta}px)`,
-            },
-            {
-              transform: `translateY(${halfCardFloatingDelta}px)`,
-            },
-          ],
+        cardFloatingAnimation = animate(
+          cardRef.current,
+          {
+            transform: [
+              `translateY(${-halfCardFloatingDelta}px)`,
+              `translateY(${halfCardFloatingDelta}px)`,
+            ],
+          },
           {
             duration: cardFloatingTime * 500,
             iterations: Infinity,
             direction: "alternate",
             iterationStart: (id % 2) + 0.5, // 0.5 cuz it's when the card is at its init state
-            easing: "ease-in-out",
           }
         );
 

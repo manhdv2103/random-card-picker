@@ -7,6 +7,11 @@ export type AdvancedAnimationOptions = Omit<
 > & {
   delay?: number | StaggerFunction;
   endDelay?: number | StaggerFunction;
+
+  /**
+   * If persist the animation, the style will be committed and the animation will be deleted
+   */
+  persist?: boolean;
 };
 
 export type Keyframes =
@@ -14,9 +19,10 @@ export type Keyframes =
   | PropertyIndexedKeyframes
   | ((index: number) => Keyframe[] | PropertyIndexedKeyframes);
 
-const DEFAULT_CONFIG: KeyframeAnimationOptions = {
+const DEFAULT_CONFIG: AdvancedAnimationOptions = {
   fill: "forwards",
   easing: "ease-in-out",
+  persist: true,
 };
 
 /**
@@ -74,8 +80,10 @@ export const animate = (
     });
 
     animation.addEventListener("finish", () => {
-      animation.commitStyles();
-      animation.cancel();
+      if (configObj.persist) {
+        animation.commitStyles();
+        animation.cancel();
+      }
     });
 
     animations.push(animation);
