@@ -1,12 +1,5 @@
+import { AnimationControls, createAnimationControls } from "./controls";
 import { StaggerFunction } from "./stagger";
-
-export type AnimationControls = {
-  addEventListener<K extends keyof AnimationEventMap>(
-    type: K,
-    listener: (evs: AnimationEventMap[K][]) => any,
-    options?: boolean | AddEventListenerOptions
-  ): void;
-};
 
 export type AdvancedAnimationOptions = Omit<
   KeyframeAnimationOptions,
@@ -106,39 +99,6 @@ const normalizeDelayValue = (
   length: number
 ): number | undefined =>
   typeof delay === "function" ? delay(index, length) : delay;
-
-/**
- * Create animation controls to controls an array of animations
- * @param animations the animation array
- * @returns the animation controls
- */
-const createAnimationControls = (
-  animations: Animation[]
-): AnimationControls => {
-  const addEventListener: AnimationControls["addEventListener"] = (
-    type,
-    listener,
-    options
-  ) => {
-    const promises: Promise<AnimationEventMap[typeof type]>[] = [];
-
-    for (const animation of animations) {
-      const promise: Promise<AnimationEventMap[typeof type]> = new Promise(
-        resolve => {
-          animation.addEventListener(type, resolve, options);
-        }
-      );
-
-      promises.push(promise);
-    }
-
-    Promise.all(promises).then(listener);
-  };
-
-  return {
-    addEventListener,
-  };
-};
 
 /**
  * Format the keyframes using metadata
