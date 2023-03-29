@@ -1,6 +1,7 @@
 import {
   AdvancedAnimationOptions,
   animate,
+  Keyframes,
   normalizeAnimateConfig,
 } from "./animate";
 import { AnimationControls, mergeAnimationControls } from "./controls";
@@ -19,7 +20,7 @@ export const branch = <T extends any>(
   item: T | T[],
   getBranches: (item: T) => HTMLElement[],
   sequence: [
-    keyframes: Keyframe[] | PropertyIndexedKeyframes,
+    keyframes: Keyframes,
     config?: number | AdvancedAnimationOptions
   ][],
   defaultConfig?: number | AdvancedAnimationOptions

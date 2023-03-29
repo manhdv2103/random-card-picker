@@ -9,6 +9,11 @@ export type AdvancedAnimationOptions = Omit<
   endDelay?: number | StaggerFunction;
 };
 
+export type Keyframes =
+  | Keyframe[]
+  | PropertyIndexedKeyframes
+  | ((index: number) => Keyframe[] | PropertyIndexedKeyframes);
+
 const DEFAULT_CONFIG: KeyframeAnimationOptions = {
   fill: "forwards",
   easing: "ease-in-out",
@@ -26,7 +31,7 @@ const DEFAULT_CONFIG: KeyframeAnimationOptions = {
  */
 export const animate = (
   elem: HTMLElement | HTMLElement[],
-  keyframes: Keyframe[] | PropertyIndexedKeyframes,
+  keyframes: Keyframes,
   config?: number | AdvancedAnimationOptions
 ): AnimationControls => {
   const elems = Array.isArray(elem) ? elem : [elem];
@@ -38,7 +43,11 @@ export const animate = (
 
   // Pre-calcutate all keyframes => reduce computation time when setup animations => animations will be more synchronized
   const formattedKeyframes = elems.map((elem, i) =>
-    formatKeyframes(elem, keyframes, i)
+    formatKeyframes(
+      elem,
+      typeof keyframes === "function" ? keyframes(i) : keyframes,
+      i
+    )
   );
 
   // Set first keyframe styles as elements' starting styles
