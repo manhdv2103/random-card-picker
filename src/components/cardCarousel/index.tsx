@@ -155,22 +155,6 @@ function CardCarousel({
     }),
     [numberOfShuffling, shufflingDuration]
   );
-
-  const toDealingAnimationOption: KeyframeAnimationOptions = useMemo(
-    () => ({
-      duration: TO_DEALING_DURATION,
-      fill: "forwards",
-      easing: "ease",
-    }),
-    []
-  );
-  const dealingAnimationOption: KeyframeAnimationOptions = useMemo(
-    () => ({
-      duration: dealingDuration * 1000,
-    }),
-    [dealingDuration]
-  );
-
   const cardRevealingAnimationOption: KeyframeAnimationOptions = useMemo(
     () => ({
       duration: cardRevealingDuration * 1000,
@@ -403,11 +387,14 @@ function CardCarousel({
   // Dealing animation
   const runDealingAnimation = useCallback(
     async (finishCallback: () => void, transition?: boolean) => {
-      if (!ensureCardsRef(cardsRef.current)) return;
+      if (!ensureCardsRef(cardsRef.current)) {
+        finishCallback();
+        return;
+      }
 
       const direction = dealingDirection === "toward" ? 1 : -1;
       const animationOption: AdvancedAnimationOptions = {
-        ...dealingAnimationOption,
+        duration: dealingDuration * 1000,
         delay: stagger(dealingDelay * 1000, { from: "last" }),
       };
 
@@ -422,7 +409,7 @@ function CardCarousel({
         const transitionAnimation = animate(
           cardsRef.current.map(card => card.elems.cardContainer),
           { transform: ["%s", startState] },
-          toDealingAnimationOption
+          TO_DEALING_DURATION
         );
 
         await transitionAnimation.finished;
@@ -469,12 +456,11 @@ function CardCarousel({
       cardDistance,
       cardSingleAngle,
       cardSkew,
-      dealingAnimationOption,
       dealingDeckDistanceFromCenter,
       dealingDelay,
       dealingDirection,
+      dealingDuration,
       dealingFlyHeight,
-      toDealingAnimationOption,
     ]
   );
 
