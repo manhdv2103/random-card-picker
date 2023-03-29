@@ -176,7 +176,7 @@ const formatKeyframes = <K extends Keyframe[] | PropertyIndexedKeyframes>(
 
     formattedKeyframes = {
       ...keyframes,
-      transform: formattedTransform,
+      ...(formattedTransform && { transform: formattedTransform }),
     };
   }
 
