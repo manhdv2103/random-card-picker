@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdvancedAnimationOptions } from "../../homebrew-waapi-assistant/animate";
 import { branch } from "../../homebrew-waapi-assistant/branch";
 import { stagger } from "../../homebrew-waapi-assistant/stagger";
-import Card, { extractCardId } from "../card";
+import Card, { ensureCardRef, extractCardId } from "../card";
 import { CardRef } from "../card/header";
 import backImg from "./../../assets/card-back.png";
 import {
@@ -22,7 +22,14 @@ import {
   TO_DEALING_DURATION,
 } from "./header";
 import "./styles.css";
-import { clamp, mod, shuffle, throttle, transpose } from "./utils";
+import {
+  clamp,
+  ensureCardsRef,
+  mod,
+  shuffle,
+  throttle,
+  transpose,
+} from "./utils";
 
 const windowStyle = window.getComputedStyle(document.body);
 
@@ -350,7 +357,7 @@ function CardCarousel({
         );
 
         cardsRef.current.forEach((cardRef, i) => {
-          if (!cardRef?.elems) return;
+          if (!ensureCardRef(cardRef)) return;
           const { cardContainer, cardShadow } = cardRef.elems;
 
           cardShadow.style.opacity = "0";
@@ -390,7 +397,7 @@ function CardCarousel({
   // Dealing animation
   const runDealingAnimation = useCallback(
     (finishCallback: () => void, lastState?: Keyframe[]) => {
-      if (!cardsRef.current.every(card => card?.elems)) return;
+      if (!ensureCardsRef(cardsRef.current)) return;
 
       const direction = dealingDirection === "toward" ? 1 : -1;
       const animationOption: AdvancedAnimationOptions = {
@@ -400,11 +407,7 @@ function CardCarousel({
 
       const animation = branch(
         cardsRef.current,
-        card => {
-          return card?.elems
-            ? [card.elems.cardContainer, card.elems.cardShadow]
-            : [];
-        },
+        card => [card.elems.cardContainer, card.elems.cardShadow],
         [
           [
             {
@@ -596,7 +599,7 @@ function CardCarousel({
           card => card?.getId() === clickedCardId
         );
 
-        if (!selectedCard?.elems) return;
+        if (!ensureCardRef(selectedCard)) return;
 
         revealing.revealId = clickedCardId;
         revealing.state = "revealing";
@@ -614,41 +617,39 @@ function CardCarousel({
         const cardAngle = angleDirection * 360 - lastCarouselDegreeRef.current;
 
         const reveal = () => {
-          if (selectedCard?.elems) {
-            const revealAnimations: Animation[] = [
-              selectedCard.elems.cardContainer.animate(
-                [
-                  {
-                    transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
-                  },
-                ],
-                cardRevealingAnimationOption
-              ),
-              selectedCard.elems.card.animate(
-                [
-                  {
-                    transform: "translateY(0px)",
-                  },
-                ],
-                cardRevealingAnimationOption
-              ),
-              selectedCard.elems.cardShadow.animate(
-                [
-                  {
-                    transform: `translateY(55px) ${
-                      getComputedStyle(selectedCard.elems.cardShadow).transform
-                    }`,
-                  },
-                ],
-                cardRevealingAnimationOption
-              ),
-            ];
+          const revealAnimations: Animation[] = [
+            selectedCard.elems.cardContainer.animate(
+              [
+                {
+                  transform: `rotateY(${cardAngle}deg) translateZ(280px) translateY(-55px) rotateY(180deg)`,
+                },
+              ],
+              cardRevealingAnimationOption
+            ),
+            selectedCard.elems.card.animate(
+              [
+                {
+                  transform: "translateY(0px)",
+                },
+              ],
+              cardRevealingAnimationOption
+            ),
+            selectedCard.elems.cardShadow.animate(
+              [
+                {
+                  transform: `translateY(55px) ${
+                    getComputedStyle(selectedCard.elems.cardShadow).transform
+                  }`,
+                },
+              ],
+              cardRevealingAnimationOption
+            ),
+          ];
 
-            revealing.cardRevealAnimations = revealAnimations;
-            revealing.cardRevealAnimations.forEach(animation => {
-              animation.onfinish = () => (revealing.state = "done_revealing");
-            });
-          }
+          revealing.cardRevealAnimations = revealAnimations;
+          revealing.cardRevealAnimations.forEach(animation => {
+            animation.onfinish = () => (revealing.state = "done_revealing");
+          });
         };
 
         if (getRevealedCardContent) {
@@ -757,7 +758,7 @@ function CardCarousel({
         // Render cards
         cardsRef.current.forEach((cardRef, i) => {
           if (revealingRef.current.revealId === i) return;
-          if (!cardRef?.elems) return;
+          if (!ensureCardRef(cardRef)) return;
           const { cardContainer } = cardRef.elems;
 
           const cardDegree = cardSingleAngle * i;

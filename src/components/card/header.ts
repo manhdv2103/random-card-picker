@@ -24,6 +24,11 @@ export type CardRef = {
   stopShakingAnimation: () => void;
 };
 
+/**
+ * `CardRef` but the elems are not null
+ */
+export type SafeCardRef = CardRef & { elems: NonNullable<CardRef["elems"]> };
+
 export type ConfigCardProps = {
   /**
    * Make the card floating up and down

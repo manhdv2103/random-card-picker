@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { CardProps, CardRef } from "./header";
+import { CardProps, CardRef, SafeCardRef } from "./header";
 import "./styles.css";
 
 const Card = forwardRef<CardRef, CardProps>(
@@ -146,3 +146,7 @@ export const extractCardId = (el: Element): number | undefined => {
   const card = el.closest("[data-id]");
   return card instanceof HTMLElement ? Number(card.dataset["id"]) : undefined;
 };
+
+export const ensureCardRef = (
+  cardRef: CardRef | null | undefined
+): cardRef is SafeCardRef => !!cardRef?.elems;
