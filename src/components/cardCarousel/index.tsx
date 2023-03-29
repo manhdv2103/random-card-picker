@@ -146,14 +146,6 @@ function CardCarousel({
     numberOfCards,
   ]);
 
-  const shufflingAnimationOption: KeyframeAnimationOptions = useMemo(
-    () => ({
-      duration: shufflingDuration * numberOfShuffling * 1000,
-      easing: "linear",
-    }),
-    [numberOfShuffling, shufflingDuration]
-  );
-
   const [cardFrontImgs, setCardFrontImgs] = useState<(string | undefined)[]>(
     []
   );
@@ -340,7 +332,13 @@ function CardCarousel({
         cardsRef.current,
         card => [card.elems.cardContainer, card.elems.cardShadow],
         [
-          [i => keyframes[i], shufflingAnimationOption],
+          [
+            i => keyframes[i],
+            {
+              duration: shufflingDuration * numberOfShuffling * 1000,
+              easing: "linear",
+            },
+          ],
           [{ opacity: 0 }, 0], // turn off shadows
         ]
       );
@@ -352,7 +350,7 @@ function CardCarousel({
       numberOfCards,
       numberOfShuffling,
       shufflingAnimation,
-      shufflingAnimationOption,
+      shufflingDuration,
       shufflingHeight,
       shufflingMaxDistance,
     ]

@@ -9,7 +9,9 @@ export type AdvancedAnimationOptions = Omit<
   endDelay?: number | StaggerFunction;
 
   /**
-   * If persist the animation, the style will be committed and the animation will be deleted
+   * If persist the animation, the style will be committed and the animation will be deleted.
+   * This should be preferred, but if another animation is still running and you don't want to interrupt it,
+   * set persist to `false`
    */
   persist?: boolean;
 };
