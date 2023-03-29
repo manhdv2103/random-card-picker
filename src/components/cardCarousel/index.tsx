@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  AdvancedAnimationOptions,
-  animate,
-} from "../../homebrew-waapi-assistant/animate";
+import { AdvancedAnimationOptions } from "../../homebrew-waapi-assistant/animate";
+import { branch } from "../../homebrew-waapi-assistant/branch";
 import { stagger } from "../../homebrew-waapi-assistant/stagger";
 import Card, { extractCardId } from "../card";
 import { CardRef } from "../card/header";
@@ -393,54 +391,57 @@ function CardCarousel({
   const runDealingAnimation = useCallback(
     (finishCallback: () => void, lastState?: Keyframe[]) => {
       if (!cardsRef.current.every(card => card?.elems)) return;
-      const cards = cardsRef.current.map(
-        card => card?.elems?.cardContainer
-      ) as HTMLDivElement[];
-      const cardShadows = cardsRef.current.map(
-        card => card?.elems?.cardShadow
-      ) as HTMLDivElement[];
 
+      const direction = dealingDirection === "toward" ? 1 : -1;
       const animationOption: AdvancedAnimationOptions = {
         ...dealingAnimationOption,
         delay: stagger(dealingDelay * 1000, { from: "last" }),
       };
-      const direction = dealingDirection === "toward" ? 1 : -1;
 
-      const animation = animate(
-        cards,
-        {
-          transform: [
-            `
-              translateZ(${dealingDeckDistanceFromCenter}px)
-              translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%))
-              rotateX(90deg)
-              translateZ(calc(${SHADOW_WIDTH} + %ipx + 1px))
-            `,
-            `
-              %k1^
-              translateY(${direction * cardDistance}px)
-            `,
-            `
-              %k1^
-              translateZ(${dealingFlyHeight}px)
-              rotatex(-${DEALING_FINISH_SKEW_DEGREE}deg)
-            `,
-            `
-              rotateY(calc(%i * ${cardSingleAngle}deg))
-              translateZ(${cardDistance}px)
-              rotateY(calc(-%i * ${cardSingleAngle}deg + ${cardSkew}deg)
-            `,
-          ],
+      const animation = branch(
+        cardsRef.current,
+        card => {
+          return card?.elems
+            ? [card.elems.cardContainer, card.elems.cardShadow]
+            : [];
         },
+        [
+          [
+            {
+              transform: [
+                `
+                  translateZ(${dealingDeckDistanceFromCenter}px)
+                  translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%))
+                  rotateX(90deg)
+                  translateZ(calc(${SHADOW_WIDTH} + %ipx + 1px))
+                `,
+                `
+                  %k1^
+                  translateY(${direction * cardDistance}px)
+                `,
+                `
+                  %k1^
+                  translateZ(${dealingFlyHeight}px)
+                  rotatex(-${DEALING_FINISH_SKEW_DEGREE}deg)
+                `,
+                `
+                  rotateY(calc(%i * ${cardSingleAngle}deg))
+                  translateZ(${cardDistance}px)
+                  rotateY(calc(-%i * ${cardSingleAngle}deg + ${cardSkew}deg)
+                `,
+              ],
+            },
+          ],
+          [
+            {
+              opacity: ["0", SHADOW_OPACITY],
+              offset: [0.8],
+            },
+          ],
+        ],
         animationOption
       );
       animation.addEventListener("finish", finishCallback);
-
-      animate(
-        cardShadows,
-        [{ opacity: 0, offset: 0.8 }, { opacity: SHADOW_OPACITY }],
-        animationOption
-      );
 
       // cardsRef.current.forEach((cardRef, i) => {
       //   const deal = () => {
