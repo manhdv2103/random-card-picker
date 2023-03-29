@@ -21,13 +21,13 @@ const DEFAULT_CONFIG: KeyframeAnimationOptions = {
  *
  * @param elem the element(s) to animate
  * @param keyframes the keyframe array
- * @param config the animation config object
+ * @param config the animation config object, or duration if number is passed
  * @returns the animation controls
  */
 export const animate = (
   elem: HTMLElement | HTMLElement[],
   keyframes: Keyframe[] | PropertyIndexedKeyframes,
-  config: number | AdvancedAnimationOptions
+  config?: number | AdvancedAnimationOptions
 ): AnimationControls => {
   const elems = Array.isArray(elem) ? elem : [elem];
   const animations: Animation[] = [];
