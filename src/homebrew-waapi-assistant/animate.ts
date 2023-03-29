@@ -48,6 +48,18 @@ export const animate = (
     formatKeyframes(elem, keyframes, i)
   );
 
+  // Set first keyframe styles as elements' starting styles
+  elems.forEach((elem, i) => {
+    const keyframes = formattedKeyframes[i];
+    const firstKeyframe = extractKeyframe(keyframes, 0);
+
+    for (const [key, value] of Object.entries(firstKeyframe)) {
+      if (key in elem.style) {
+        elem.style[key as any] = value + "";
+      }
+    }
+  });
+
   elems.forEach((elem, i) => {
     const animation = elem.animate(formattedKeyframes[i], {
       ...configObj,
@@ -64,6 +76,25 @@ export const animate = (
   });
 
   return createAnimationControls(animations);
+};
+
+/**
+ * Extract a single keyframe from keyframes by index
+ */
+const extractKeyframe = (
+  keyframes: Keyframe[] | PropertyIndexedKeyframes,
+  index: number
+): Keyframe => {
+  if (Array.isArray(keyframes)) {
+    return keyframes[index];
+  }
+
+  const keyframe: Keyframe = {};
+  for (const [k, v] of Object.entries(keyframes)) {
+    keyframe[k] = Array.isArray(v) ? v[0] : v;
+  }
+
+  return keyframe;
 };
 
 /**
