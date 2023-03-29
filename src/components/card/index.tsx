@@ -1,10 +1,4 @@
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
+import { forwardRef, useImperativeHandle, useRef } from "react";
 import { animate } from "../../homebrew-waapi-assistant/animate";
 import { AnimationControls } from "../../homebrew-waapi-assistant/controls";
 import { CardProps, CardRef, SafeCardRef } from "./header";
@@ -25,8 +19,7 @@ const Card = forwardRef<CardRef, CardProps>(
     },
     ref
   ) => {
-    const [isfloatingAnimationStarted, setIsfloatingAnimationStarted] =
-      useState(false);
+    const floatingAnimationRef = useRef<AnimationControls | undefined>();
     const shakingAnimationRef = useRef<AnimationControls | undefined>();
     const cardContainerRef = useRef<HTMLDivElement | null>(null);
     const cardRef = useRef<HTMLDivElement | null>(null);
@@ -45,8 +38,35 @@ const Card = forwardRef<CardRef, CardProps>(
       cardContainer: cardContainerRef.current,
       cardShadow: cardShadowRef.current,
       getId: () => id,
-      startFloatingAnimation: () => setIsfloatingAnimationStarted(true),
-      stopFloatingAnimation: () => setIsfloatingAnimationStarted(false),
+      startFloatingAnimation: () => {
+        if (cardRef.current) {
+          const halfCardFloatingDelta = cardFloatingDelta / 2;
+
+          floatingAnimationRef.current = animate(
+            cardRef.current,
+            {
+              transform: [
+                `translateY(${-halfCardFloatingDelta}px)`,
+                `translateY(${halfCardFloatingDelta}px)`,
+              ],
+            },
+            {
+              duration: cardFloatingTime * 500,
+              iterations: Infinity,
+              direction: "alternate",
+              iterationStart: (id % 2) + 0.5, // 0.5 cuz it's when the card is at its init state
+            }
+          );
+
+          // TODO: update card shadow scaling to fit with the card's current height
+          // cardShadow.style.transform = `scale(${
+          //   1 + cardFloatingHeight * (1 - cardFloatingDelta / 10)
+          // })`;,
+        }
+      },
+      stopFloatingAnimation: () => {
+        floatingAnimationRef.current?.stop();
+      },
       startShakingAnimation: () => {
         if (cardRef.current)
           shakingAnimationRef.current = animate(
@@ -65,45 +85,6 @@ const Card = forwardRef<CardRef, CardProps>(
         shakingAnimationRef.current?.stop();
       },
     }));
-
-    useEffect(() => {
-      let cardFloatingAnimation: AnimationControls | undefined = undefined;
-
-      if (cardFloating && isfloatingAnimationStarted && cardRef.current) {
-        const halfCardFloatingDelta = cardFloatingDelta / 2;
-
-        cardFloatingAnimation = animate(
-          cardRef.current,
-          {
-            transform: [
-              `translateY(${-halfCardFloatingDelta}px)`,
-              `translateY(${halfCardFloatingDelta}px)`,
-            ],
-          },
-          {
-            duration: cardFloatingTime * 500,
-            iterations: Infinity,
-            direction: "alternate",
-            iterationStart: (id % 2) + 0.5, // 0.5 cuz it's when the card is at its init state
-          }
-        );
-
-        // TODO: update card shadow scaling to fit with the card's current height
-        // cardShadow.style.transform = `scale(${
-        //   1 + cardFloatingHeight * (1 - cardFloatingDelta / 10)
-        // })`;
-      }
-
-      return () => {
-        cardFloatingAnimation?.cancel();
-      };
-    }, [
-      cardFloating,
-      cardFloatingDelta,
-      cardFloatingTime,
-      id,
-      isfloatingAnimationStarted,
-    ]);
 
     return (
       <div ref={cardContainerRef} className="card-container" data-id={id}>
