@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AdvancedAnimationOptions } from "../../homebrew-waapi-assistant/animate";
+import {
+  AdvancedAnimationOptions,
+  animate,
+} from "../../homebrew-waapi-assistant/animate";
 import { branch } from "../../homebrew-waapi-assistant/branch";
 import { stagger } from "../../homebrew-waapi-assistant/stagger";
 import Card, { ensureCardRef, extractCardId } from "../card";
@@ -372,7 +375,10 @@ function CardCarousel({
           if (i === numberOfCards - 1) {
             animation.addEventListener("finish", () => {
               // let others do the rest
-              animations.forEach(a => a.cancel());
+              animations.forEach(a => {
+                a.commitStyles();
+                a.cancel();
+              });
 
               // dealingRef.current.state = "done_dealing";
               finishCallback(keyframes.map(kfs => kfs[kfs.length - 1]));
@@ -396,7 +402,7 @@ function CardCarousel({
 
   // Dealing animation
   const runDealingAnimation = useCallback(
-    (finishCallback: () => void, lastState?: Keyframe[]) => {
+    async (finishCallback: () => void, transition?: boolean) => {
       if (!ensureCardsRef(cardsRef.current)) return;
 
       const direction = dealingDirection === "toward" ? 1 : -1;
@@ -405,19 +411,31 @@ function CardCarousel({
         delay: stagger(dealingDelay * 1000, { from: "last" }),
       };
 
-      const animation = branch(
+      const startState = `
+        translateZ(${dealingDeckDistanceFromCenter}px)
+        translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%))
+        rotateX(90deg)
+        translateZ(calc(${SHADOW_WIDTH} + %ipx + 1px))
+      `;
+
+      if (transition) {
+        const transitionAnimation = animate(
+          cardsRef.current.map(card => card.elems.cardContainer),
+          { transform: ["%s", startState] },
+          toDealingAnimationOption
+        );
+
+        await transitionAnimation.finished;
+      }
+
+      const dealAnimation = branch(
         cardsRef.current,
         card => [card.elems.cardContainer, card.elems.cardShadow],
         [
           [
             {
               transform: [
-                `
-                  translateZ(${dealingDeckDistanceFromCenter}px)
-                  translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%))
-                  rotateX(90deg)
-                  translateZ(calc(${SHADOW_WIDTH} + %ipx + 1px))
-                `,
+                startState,
                 `
                   %k1^
                   translateY(${direction * cardDistance}px)
@@ -444,21 +462,8 @@ function CardCarousel({
         ],
         animationOption
       );
-      animation.addEventListener("finish", finishCallback);
 
-      // cardsRef.current.forEach((cardRef, i) => {
-      //   const deal = () => {
-      // if (lastState) {
-      //   cardContainer
-      //     .animate(
-      //       [lastState[i], { transform: startState }],
-      //       toDealingAnimationOption
-      //     )
-      //     .finished.then(deal);
-      // } else {
-      //   deal();
-      // }
-      // });
+      dealAnimation.addEventListener("finish", finishCallback);
     },
     [
       cardDistance,
@@ -469,6 +474,7 @@ function CardCarousel({
       dealingDelay,
       dealingDirection,
       dealingFlyHeight,
+      toDealingAnimationOption,
     ]
   );
 
@@ -477,8 +483,8 @@ function CardCarousel({
       switch (firstAnimationRef.current.state) {
         case "running":
           if (firstAnimation) {
-            runShufflingAnimation(kfs => {
-              runDealingAnimation(finishCallback, kfs);
+            runShufflingAnimation(() => {
+              runDealingAnimation(finishCallback, shufflingAnimation);
             });
           } else {
             finishCallback();
@@ -490,7 +496,12 @@ function CardCarousel({
           finishCallback();
       }
     },
-    [firstAnimation, runDealingAnimation, runShufflingAnimation]
+    [
+      firstAnimation,
+      runDealingAnimation,
+      runShufflingAnimation,
+      shufflingAnimation,
+    ]
   );
 
   // Rotate handlings

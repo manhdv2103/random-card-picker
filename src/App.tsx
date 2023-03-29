@@ -40,7 +40,6 @@ function App() {
             kineticRotateWeight={10}
             kineticDecelerationRate={325}
             numberOfShuffling={12}
-            shufflingAnimation={false}
             shufflingMaxDistance={70}
             shufflingHeight={100}
             shufflingDuration={0.18}
