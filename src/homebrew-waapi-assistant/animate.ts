@@ -68,7 +68,7 @@ const createAnimationControls = (
 
     for (const animation of animations) {
       const promise: Promise<AnimationEventMap[typeof type]> = new Promise(
-        (resolve, _) => {
+        resolve => {
           animation.addEventListener(type, resolve, options);
         }
       );
