@@ -189,6 +189,9 @@ const formatKeyframes = <K extends Keyframe[] | PropertyIndexedKeyframes>(
  *  - `%i`: the index of the element in the element array.
  *  - `%k_`: the formatted tranform style of the keyframe _th in the current keyframe array.
  * If _ is greater or equals to the current index of the transform style then the tag will be ignored.
+ *  - `%k_^`: the formatted tranform style of the keyframe _th place
+ * from the current transform style up to the start of the keyframe array.
+ * If _ is 0 or greater than the current index of the transform style then the tag will be ignored.
  *
  * TODO: Support `%()` - the pre calculate tag without using the calc() CSS function
  *
@@ -209,9 +212,13 @@ const formatTransform = (
   return transform
     .replaceAll("%s", getComputedStyle(elem).transform)
     .replaceAll("%i", elemIndex + "")
-    .replaceAll(/%k(\d+)/g, (_, replaceIdx) => {
-      replaceIdx = Number(replaceIdx);
-      if (replaceIdx < index) {
+    .replaceAll(/%k(\d+)(\^?)/g, (_, value, relative) => {
+      let replaceIdx = Number(value);
+      if (relative === "^") {
+        replaceIdx = index - replaceIdx;
+      }
+
+      if (replaceIdx >= 0 && replaceIdx < index) {
         return getReplaceTransform(replaceIdx);
       }
 

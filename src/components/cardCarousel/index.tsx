@@ -417,12 +417,11 @@ function CardCarousel({
               translateZ(calc(${SHADOW_WIDTH} + %ipx + 1px))
             `,
             `
-              %k0
+              %k1^
               translateY(${direction * cardDistance}px)
             `,
             `
-              %k0
-              translateY(${direction * cardDistance}px)
+              %k1^
               translateZ(${dealingFlyHeight}px)
               rotatex(-${DEALING_FINISH_SKEW_DEGREE}deg)
             `,
