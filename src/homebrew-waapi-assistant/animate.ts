@@ -33,7 +33,7 @@ export const animate = (
   const animations: Animation[] = [];
   const configObj: AdvancedAnimationOptions = {
     ...DEFAULT_CONFIG,
-    ...(typeof config === "number" ? { duration: config } : config),
+    ...normalizeAnimateConfig(config),
   };
 
   // Pre-calcutate all keyframes => reduce computation time when setup animations => animations will be more synchronized
@@ -70,6 +70,16 @@ export const animate = (
 
   return createAnimationControls(animations);
 };
+
+/**
+ * Normalize your animate config parameter to a config object
+ * @param config the config parameter to normalize
+ * @returns the config object
+ */
+export const normalizeAnimateConfig = (
+  config: number | AdvancedAnimationOptions | undefined
+): AdvancedAnimationOptions | undefined =>
+  typeof config === "number" ? { duration: config } : config;
 
 /**
  * Extract a single keyframe from keyframes by index
