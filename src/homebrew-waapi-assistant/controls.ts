@@ -38,3 +38,36 @@ export const createAnimationControls = (
     addEventListener,
   };
 };
+
+/**
+ * Merge many animation control objects into a single animation controls object
+ * @param controlObjs the controls array
+ * @returns the merged animation controls
+ */
+export const mergeAnimationControls = (
+  controlObjs: AnimationControls[]
+): AnimationControls => {
+  const addEventListener: AnimationControls["addEventListener"] = (
+    type,
+    listener,
+    options
+  ) => {
+    const promises: Promise<AnimationEventMap[typeof type][]>[] = [];
+
+    for (const control of controlObjs) {
+      const promise: Promise<AnimationEventMap[typeof type][]> = new Promise(
+        resolve => {
+          control.addEventListener(type, resolve, options);
+        }
+      );
+
+      promises.push(promise);
+    }
+
+    Promise.all(promises).then(res => listener(res.flat()));
+  };
+
+  return {
+    addEventListener,
+  };
+};
