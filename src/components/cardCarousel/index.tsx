@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { animate } from "../../homebrew-waapi-assistant/animate";
+import {
+  AdvancedAnimationOptions,
+  animate,
+} from "../../homebrew-waapi-assistant/animate";
+import { stagger } from "../../homebrew-waapi-assistant/stagger";
 import Card, { extractCardId } from "../card";
 import { CardRef } from "../card/header";
 import backImg from "./../../assets/card-back.png";
@@ -396,9 +400,9 @@ function CardCarousel({
         card => card?.elems?.cardShadow
       ) as HTMLDivElement[];
 
-      const animationOption: KeyframeAnimationOptions = {
+      const animationOption: AdvancedAnimationOptions = {
         ...dealingAnimationOption,
-        // delay,
+        delay: stagger(dealingDelay * 1000, { from: "last" }),
       };
       const direction = dealingDirection === "toward" ? 1 : -1;
 
@@ -459,6 +463,7 @@ function CardCarousel({
       cardSkew,
       dealingAnimationOption,
       dealingDeckDistanceFromCenter,
+      dealingDelay,
       dealingDirection,
       dealingFlyHeight,
     ]

@@ -1,9 +1,19 @@
+import { StaggerFunction } from "./stagger";
+
 export type AnimationControls = {
   addEventListener<K extends keyof AnimationEventMap>(
     type: K,
     listener: (evs: AnimationEventMap[K][]) => any,
     options?: boolean | AddEventListenerOptions
   ): void;
+};
+
+export type AdvancedAnimationOptions = Omit<
+  KeyframeAnimationOptions,
+  "delay" | "endDelay"
+> & {
+  delay?: number | StaggerFunction;
+  endDelay?: number | StaggerFunction;
 };
 
 const DEFAULT_CONFIG: KeyframeAnimationOptions = {
@@ -24,10 +34,14 @@ const DEFAULT_CONFIG: KeyframeAnimationOptions = {
 export const animate = (
   elem: HTMLElement | HTMLElement[],
   keyframes: Keyframe[] | PropertyIndexedKeyframes,
-  config: number | KeyframeAnimationOptions
+  config: number | AdvancedAnimationOptions
 ): AnimationControls => {
   const elems = Array.isArray(elem) ? elem : [elem];
   const animations: Animation[] = [];
+  const configObj: AdvancedAnimationOptions = {
+    ...DEFAULT_CONFIG,
+    ...(typeof config === "number" ? { duration: config } : config),
+  };
 
   // Pre-calcutate all keyframes => reduce computation time when setup animations => animations will be more synchronized
   const formattedKeyframes = elems.map((elem, i) =>
@@ -36,8 +50,9 @@ export const animate = (
 
   elems.forEach((elem, i) => {
     const animation = elem.animate(formattedKeyframes[i], {
-      ...DEFAULT_CONFIG,
-      ...(typeof config === "number" ? { duration: config } : config),
+      ...configObj,
+      delay: normalizeDelayValue(configObj.delay, i, elems.length),
+      endDelay: normalizeDelayValue(configObj.endDelay, i, elems.length),
     });
 
     animation.addEventListener("finish", () => {
@@ -50,6 +65,16 @@ export const animate = (
 
   return createAnimationControls(animations);
 };
+
+/**
+ * Quick function to normalize the delay value that supports StaggerFunction
+ */
+const normalizeDelayValue = (
+  delay: number | StaggerFunction | undefined,
+  index: number,
+  length: number
+): number | undefined =>
+  typeof delay === "function" ? delay(index, length) : delay;
 
 /**
  * Create animation controls to controls an array of animations
