@@ -4,6 +4,11 @@ export type AnimationControls = {
     listener: (evs: AnimationEventMap[K][]) => any,
     options?: boolean | AddEventListenerOptions
   ): void;
+  play: Animation["play"];
+  pause: Animation["pause"];
+  finish: Animation["finish"];
+  cancel: Animation["cancel"];
+  finished: Promise<Animation[]>;
 };
 
 /**
@@ -34,8 +39,31 @@ export const createAnimationControls = (
     Promise.all(promises).then(listener);
   };
 
+  const play = () => {
+    animations.forEach(animation => animation.play());
+  };
+
+  const pause = () => {
+    animations.forEach(animation => animation.pause());
+  };
+
+  const finish = () => {
+    animations.forEach(animation => animation.finish());
+  };
+
+  const cancel = () => {
+    animations.forEach(animation => animation.cancel());
+  };
+
+  const finished = Promise.all(animations.map(animation => animation.finished));
+
   return {
     addEventListener,
+    play,
+    pause,
+    finish,
+    cancel,
+    finished,
   };
 };
 
@@ -67,7 +95,32 @@ export const mergeAnimationControls = (
     Promise.all(promises).then(res => listener(res.flat()));
   };
 
+  const play = () => {
+    controlObjs.forEach(controlObj => controlObj.play());
+  };
+
+  const pause = () => {
+    controlObjs.forEach(controlObj => controlObj.pause());
+  };
+
+  const finish = () => {
+    controlObjs.forEach(controlObj => controlObj.finish());
+  };
+
+  const cancel = () => {
+    controlObjs.forEach(controlObj => controlObj.cancel());
+  };
+
+  const finished = Promise.all(
+    controlObjs.map(animation => animation.finished)
+  ).then(ev => ev.flat());
+
   return {
     addEventListener,
+    play,
+    pause,
+    finish,
+    cancel,
+    finished,
   };
 };
