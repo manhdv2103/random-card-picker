@@ -54,10 +54,14 @@ export const animate = (
   elems.forEach((elem, i) => {
     const keyframes = formattedKeyframes[i];
     const firstKeyframe = extractKeyframe(keyframes, 0);
+    const secondKeyframe = extractKeyframe(keyframes, 1);
 
-    for (const [key, value] of Object.entries(firstKeyframe)) {
-      if (key in elem.style) {
-        elem.style[key as any] = value + "";
+    // If only one keyframe is presented, then don't set styles
+    if (Object.keys(secondKeyframe).length) {
+      for (const [key, value] of Object.entries(firstKeyframe)) {
+        if (key in elem.style) {
+          elem.style[key as any] = value + "";
+        }
       }
     }
   });
@@ -103,7 +107,8 @@ const extractKeyframe = (
 
   const keyframe: Keyframe = {};
   for (const [k, v] of Object.entries(keyframes)) {
-    keyframe[k] = Array.isArray(v) ? v[0] : v;
+    const value = Array.isArray(v) ? v[index] : [v][index];
+    if (value !== null && value !== undefined) keyframe[k] = value;
   }
 
   return keyframe;
