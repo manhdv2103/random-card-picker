@@ -136,7 +136,6 @@ const normalizeDelayValue = (
 
 /**
  * Format the keyframes using metadata
- * Currently only support transform-type keyframe (opacity next maybe)
  *
  * @param elem the HTML element that uses the keyframes
  * @param keyframes the keyframes theirselves
@@ -148,63 +147,98 @@ const formatKeyframes = <K extends Keyframe[] | PropertyIndexedKeyframes>(
   keyframes: K,
   elemIndex: number
 ): K => {
-  let formattedKeyframes;
-
   if (Array.isArray(keyframes)) {
-    formattedKeyframes = keyframes.map((keyframe, i) => {
-      const transform = keyframe.transform;
+    const formattedKeyframes: Keyframe[] = [];
 
-      if (typeof transform === "string") {
-        keyframe.transform = formatTransform(
-          transform,
+    keyframes.forEach((keyframe, i) => {
+      const formattedKeyframe = { ...keyframe };
+      Object.entries(formattedKeyframe).forEach(([key, value]) => {
+        formattedKeyframe[key] = formatProperty(
+          key,
+          value,
           elem,
           elemIndex,
           i,
-          replaceIdx => {
-            const replaceTransform = keyframes[replaceIdx].transform;
-            return replaceTransform ? replaceTransform + "" : "";
-          }
-        );
-      }
-
-      return keyframe;
-    });
-  } else {
-    const transform = keyframes.transform;
-    let formattedTransform;
-
-    if (Array.isArray(transform) && transform.length) {
-      const tempArr: (string | number | null)[] = [];
-      transform.forEach((tranItem, i) => {
-        tempArr.push(
-          typeof tranItem === "string"
-            ? formatTransform(tranItem, elem, elemIndex, i, replaceIdx => {
-                const replaceTransform = tempArr[replaceIdx];
-                return replaceTransform ? replaceTransform + "" : "";
-              })
-            : tranItem
+          replaceIdx => formattedKeyframes[replaceIdx][key]
         );
       });
-      formattedTransform = tempArr;
-    } else if (typeof transform === "string") {
-      formattedTransform = formatTransform(
-        transform,
-        elem,
-        elemIndex,
-        0,
-        _ => ""
-      );
-    } else {
-      formattedTransform = transform;
-    }
 
-    formattedKeyframes = {
-      ...keyframes,
-      ...(formattedTransform && { transform: formattedTransform }),
-    };
+      formattedKeyframes.push(formattedKeyframe);
+    });
+
+    return formattedKeyframes as K;
+  } else {
+    const formattedKeyframes: PropertyIndexedKeyframes = { ...keyframes };
+    Object.entries(formattedKeyframes).forEach(([key, values]) => {
+      if (Array.isArray(values)) {
+        const formattedValues: (string | number | null)[] = [];
+        values.forEach((value, i) =>
+          formattedValues.push(
+            formatProperty(
+              key,
+              value,
+              elem,
+              elemIndex,
+              i,
+              replaceIdx => formattedValues[replaceIdx]
+            ) ?? null
+          )
+        );
+
+        formattedKeyframes[key] = formattedValues as
+          | string[]
+          | (number | null)[]; // just believe in my code
+      } else {
+        formattedKeyframes[key] = formatProperty(
+          key,
+          values,
+          elem,
+          elemIndex,
+          0,
+          () => null
+        );
+      }
+    });
+
+    return formattedKeyframes as K;
   }
+};
 
-  return formattedKeyframes as K;
+/**
+ * Format a keyframe property
+ * Currently only support transform and opacity properties
+ *
+ * @param propertyKey the keyframe property key
+ * @param property the keyframe property value
+ * @param elem the HTML element that owns the property
+ * @param elemIndex the index of the HTML element in the element array
+ * @param index the index of the property in the transform array
+ * @param getReplaceProperty function to get the replace transform for the `%k_` tags
+ * @returns the formatted property
+ */
+const formatProperty = (
+  propertyKey: string,
+  property: string | number | null | undefined,
+  elem: HTMLElement,
+  elemIndex: number,
+  index: number,
+  getReplaceProperty: (replaceIdx: number) => string | number | null | undefined
+): string | number | null | undefined => {
+  switch (propertyKey) {
+    case "transform":
+      return typeof property === "string"
+        ? formatTransform(property, elem, elemIndex, index, i => {
+            const res = getReplaceProperty(i);
+            return typeof res === "number" ? res + "" : res;
+          })
+        : property;
+    case "opacity":
+      return typeof property === "string" || typeof property === "number"
+        ? formatOpacity(property, elem, index, getReplaceProperty)
+        : property;
+    default:
+      return property;
+  }
 };
 
 /**
@@ -232,9 +266,9 @@ const formatTransform = (
   elem: HTMLElement,
   elemIndex: number,
   index: number,
-  getReplaceTransform: (replaceIdx: number) => string
-) => {
-  return transform
+  getReplaceTransform: (replaceIdx: number) => string | null | undefined
+): string => {
+  const a = transform
     .replaceAll("%s", getComputedStyle(elem).transform)
     .replaceAll("%i", elemIndex + "")
     .replaceAll(/%k(\d+)(\^?)/g, (_, value, relative) => {
@@ -244,9 +278,55 @@ const formatTransform = (
       }
 
       if (replaceIdx >= 0 && replaceIdx < index) {
-        return getReplaceTransform(replaceIdx);
+        const replaceTransform = getReplaceTransform(replaceIdx);
+        if (typeof replaceTransform === "string") return replaceTransform;
       }
 
       return "";
     });
+  return a;
+};
+
+/**
+ * Format a opacity keyframe using a bunch of metadata via tags
+ * Currently supported tags are:
+ *  - `%s`: the start/current opacity style of the element.
+ *  - `%k_`: the formatted tranform style of the keyframe _th in the current keyframe array.
+ * If _ is greater or equals to the current index of the opacity style then the tag will be ignored.
+ *  - `%k_^`: the formatted tranform style of the keyframe _th place
+ * from the current opacity style up to the start of the keyframe array.
+ * If _ is 0 or greater than the current index of the opacity style then the tag will be ignored.
+ *
+ * @param opacity the opacity keyframe
+ * @param elem the HTML element that owns the opacity
+ * @param index the index of the opacity in the opacity array
+ * @param getReplaceOpacity function to get the replace opacity for the `%k_` tags
+ * @returns the formatted opacity
+ */
+const formatOpacity = (
+  opacity: string | number,
+  elem: HTMLElement,
+  index: number,
+  getReplaceOpacity: (replaceIdx: number) => string | number | null | undefined
+): string => {
+  if (typeof opacity === "string") {
+    if (opacity === "%s") return getComputedStyle(elem).opacity;
+
+    const matchK = /^%k(\d+)(\^?)$/.exec(opacity);
+    if (matchK) {
+      let replaceIdx = Number(matchK[1]);
+      const relative = matchK[2] === "^";
+      if (relative) {
+        replaceIdx = index - replaceIdx;
+      }
+
+      if (replaceIdx >= 0 && replaceIdx < index) {
+        const replaceOpacity = getReplaceOpacity(replaceIdx);
+        if (replaceOpacity !== null && replaceOpacity !== undefined)
+          return replaceOpacity + "";
+      }
+    }
+  }
+
+  return opacity + "";
 };
