@@ -285,82 +285,76 @@ function CardCarousel({
   }, []);
 
   // Shuffling animation
-  const runShufflingAnimation = useCallback(
-    (finishCallback: () => void) => {
-      if (!shufflingAnimation || !ensureCardsRef(cardsRef.current)) {
-        finishCallback();
-        return;
-      }
+  const runShufflingAnimation = useCallback(() => {
+    if (!ensureCardsRef(cardsRef.current)) {
+      return;
+    }
 
-      const shuffleIndices = transpose(
-        // transpose to make the indices card-independence
-        Array(numberOfShuffling + 1)
-          .fill(Array.from(Array(numberOfCards).keys()))
-          // leave the last states intact
-          .map((arr, i) => (i < numberOfShuffling ? shuffle(arr) : arr))
-      );
+    const shuffleIndices = transpose(
+      // transpose to make the indices card-independence
+      Array(numberOfShuffling + 1)
+        .fill(Array.from(Array(numberOfCards).keys()))
+        // leave the last states intact
+        .map((arr, i) => (i < numberOfShuffling ? shuffle(arr) : arr))
+    );
 
-      const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) rotateZ(90deg)`;
-      const keyframes: Keyframe[][] = shuffleIndices.map(indices =>
-        indices.reduce((res, idx, i) => {
-          const layer = `translateZ(calc(${shufflingHeight}px + ${SHADOW_WIDTH} + ${
-            idx + 1
-          }px))`;
+    const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) rotateZ(90deg)`;
+    const keyframes: Keyframe[][] = shuffleIndices.map(indices =>
+      indices.reduce((res, idx, i) => {
+        const layer = `translateZ(calc(${shufflingHeight}px + ${SHADOW_WIDTH} + ${
+          idx + 1
+        }px))`;
+        res.push({
+          transform: `${startState} ${layer} translateY(0px)`,
+        });
+
+        if (i !== numberOfShuffling) {
+          res.push({
+            transform: `${startState} ${layer} translateY(calc(${
+              // split the deck into 2
+              idx < numberOfCards / 2 ? -1 : 1
+            } * ${shufflingMaxDistance}px))`,
+          });
+        } else {
+          // lengthen the rest state after shuffling
           res.push({
             transform: `${startState} ${layer} translateY(0px)`,
           });
+        }
 
-          if (i !== numberOfShuffling) {
-            res.push({
-              transform: `${startState} ${layer} translateY(calc(${
-                // split the deck into 2
-                idx < numberOfCards / 2 ? -1 : 1
-              } * ${shufflingMaxDistance}px))`,
-            });
-          } else {
-            // lengthen the rest state after shuffling
-            res.push({
-              transform: `${startState} ${layer} translateY(0px)`,
-            });
-          }
+        return res;
+      }, [])
+    );
 
-          return res;
-        }, [])
-      );
-
-      const animation = branch(
-        cardsRef.current,
-        card => [card.elems.cardContainer, card.elems.cardShadow],
+    const animation = branch(
+      cardsRef.current,
+      card => [card.elems.cardContainer, card.elems.cardShadow],
+      [
         [
-          [
-            i => keyframes[i],
-            {
-              duration: shufflingDuration * numberOfShuffling * 1000,
-              easing: "linear",
-            },
-          ],
-          [{ opacity: 0 }, 0], // turn off shadows
-        ]
-      );
+          i => keyframes[i],
+          {
+            duration: shufflingDuration * numberOfShuffling * 1000,
+            easing: "linear",
+          },
+        ],
+        [{ opacity: 0 }, 0], // turn off shadows
+      ]
+    );
 
-      animation.addEventListener("finish", finishCallback);
-    },
-    [
-      dealingDeckDistanceFromCenter,
-      numberOfCards,
-      numberOfShuffling,
-      shufflingAnimation,
-      shufflingDuration,
-      shufflingHeight,
-      shufflingMaxDistance,
-    ]
-  );
+    return animation.finished;
+  }, [
+    dealingDeckDistanceFromCenter,
+    numberOfCards,
+    numberOfShuffling,
+    shufflingDuration,
+    shufflingHeight,
+    shufflingMaxDistance,
+  ]);
 
   // Dealing animation
   const runDealingAnimation = useCallback(
-    async (finishCallback: () => void, transition?: boolean) => {
+    async (transition?: boolean) => {
       if (!ensureCardsRef(cardsRef.current)) {
-        finishCallback();
         return;
       }
 
@@ -422,7 +416,7 @@ function CardCarousel({
         animationOption
       );
 
-      dealAnimation.addEventListener("finish", finishCallback);
+      return dealAnimation.finished;
     },
     [
       cardDistance,
@@ -437,17 +431,15 @@ function CardCarousel({
   );
 
   const runFirstAnimation = useCallback(
-    (finishCallback: () => void) => {
+    async (finishCallback: () => void) => {
       switch (firstAnimationRef.current.state) {
         case "running":
           if (firstAnimation) {
-            runShufflingAnimation(() => {
-              runDealingAnimation(finishCallback, shufflingAnimation);
-            });
-          } else {
-            finishCallback();
+            if (shufflingAnimation) await runShufflingAnimation();
+            await runDealingAnimation(shufflingAnimation);
           }
 
+          finishCallback();
           firstAnimationRef.current.state = "done_running";
           break;
         case "done_running":
