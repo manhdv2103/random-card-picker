@@ -308,7 +308,13 @@ function CardCarousel({
           )
       );
 
-      const startState = `translateZ(${dealingDeckDistanceFromCenter}px) translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%)) rotateX(90deg) rotateZ(90deg)`;
+      const startState = `
+        rotateY(${-lastCarouselDegreeRef.current}deg)
+        translateZ(${dealingDeckDistanceFromCenter}px)
+        translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%))
+        rotateX(90deg)
+        rotateZ(90deg)
+      `;
       const keyframes: Keyframe[][] = shuffleIndices.map(indices =>
         indices.reduce((res, idx, i) => {
           const layer = `translateZ(calc(${shufflingHeight}px + ${SHADOW_WIDTH} + ${
@@ -399,6 +405,7 @@ function CardCarousel({
       };
 
       const startState = `
+        rotateY(${-lastCarouselDegreeRef.current}deg)
         translateZ(${dealingDeckDistanceFromCenter}px)
         translateY(calc(${SHADOW_SPACE_FROM_CARD} + 50%))
         rotateX(90deg)
@@ -433,6 +440,7 @@ function CardCarousel({
                   rotatex(-${DEALING_FINISH_SKEW_DEGREE}deg)
                 `,
                 `
+                  rotateY(${-lastCarouselDegreeRef.current}deg)
                   rotateY(calc(%i * ${cardSingleAngle}deg))
                   translateZ(${cardDistance}px)
                   rotateY(calc(-%i * ${cardSingleAngle}deg + ${cardSkew}deg)
@@ -687,6 +695,7 @@ function CardCarousel({
             await runShufflingAnimation(true);
             await runDealingAnimation(true);
             cardsRef.current.forEach(card => card?.startFloatingAnimation());
+            lastCarouselDegreeRef.current = 0;
           }
 
           revealing.state = "pre_revealing";
