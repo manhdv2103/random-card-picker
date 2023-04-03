@@ -39,7 +39,7 @@ const Card = forwardRef<CardRef, CardProps>(
       cardShadow: cardShadowRef.current,
       getId: () => id,
       startFloatingAnimation: () => {
-        if (cardRef.current) {
+        if (cardRef.current && cardFloating) {
           const halfCardFloatingDelta = cardFloatingDelta / 2;
 
           floatingAnimationRef.current = animate(
