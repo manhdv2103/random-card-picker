@@ -744,8 +744,6 @@ function CardCarousel({
             } else if (cardSnapping) {
               carouselDegree = handleSnap(delta, carouselDegree);
             }
-          } else {
-            carouselLock = true;
           }
         } else {
           const downCursor = clickRef.current.downCursor;
@@ -764,6 +762,10 @@ function CardCarousel({
               carouselDegree = handleManualRotate(carouselDegree);
             }
           }
+        }
+
+        if (revealingRef.current.state !== "pre_revealing") {
+          carouselLock = true;
         }
 
         if (!carouselLock) {
