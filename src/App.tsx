@@ -39,7 +39,7 @@ function App() {
             manualRotateDistance={1000}
             kineticRotateWeight={10}
             kineticDecelerationRate={325}
-            numberOfShuffling={12}
+            numberOfShuffling={8}
             shufflingMaxDistance={70}
             shufflingHeight={100}
             shufflingDuration={0.18}

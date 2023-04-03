@@ -63,6 +63,12 @@ export type CardCarouselProps = {
   shufflingAnimation?: boolean;
 
   /**
+   * Run shuffling and dealing animation after dismissing a revealed card
+   * @default true
+   */
+  redealingAnimation?: boolean;
+
+  /**
    * Number of shuffles
    */
   numberOfShuffling: number;
@@ -247,6 +253,16 @@ export const KINETIC_SNAPPING_VELOCITY_LOWER_BOUND = 300; // deg/s
  * Degree in deg to skew the card just before it's finished being dealed
  */
 export const DEALING_FINISH_SKEW_DEGREE = 60; //deg
+
+/**
+ * Transition time from other animation to shuffling animation for each card
+ */
+export const TO_SHUFFLING_DURATION = 300; // ms
+
+/**
+ * Delay between transition to shuffling animations
+ */
+export const TO_SHUFFLING_DELAY = 100; // ms
 
 /**
  * Transition time from other animation to dealing animation
