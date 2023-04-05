@@ -73,7 +73,10 @@ export const createAnimationControls = (
     });
   };
 
-  const finished = Promise.all(animations.map(animation => animation.finished));
+  const finished = Promise.all(animations.map(animation => animation.finished))
+    // Suppress the stupid AbortError
+    // https://developer.mozilla.org/en-US/docs/Web/API/Animation/cancel#exceptions
+    .catch(() => animations);
 
   return {
     addEventListener,
