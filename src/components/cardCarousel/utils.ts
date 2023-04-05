@@ -1,3 +1,6 @@
+import { ensureCardRef } from "../card";
+import { CardRef, SafeCardRef } from "../card/header";
+
 export function mod(n: number, m: number) {
   return ((n % m) + m) % m;
 }
@@ -44,4 +47,10 @@ export function transpose(matrix: any[][]) {
 
 export function clamp(n: number, min: number, max: number) {
   return Math.min(Math.max(n, min), max);
+}
+
+export function ensureCardsRef(
+  cardsRef: (CardRef | null)[]
+): cardsRef is SafeCardRef[] {
+  return cardsRef.every(ensureCardRef);
 }

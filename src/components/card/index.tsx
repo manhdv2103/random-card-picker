@@ -1,11 +1,7 @@
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
-import { CardProps, CardRef } from "./header";
+import { forwardRef, useImperativeHandle, useRef } from "react";
+import { animate } from "../../homebrew-waapi-assistant/animate";
+import { AnimationControls } from "../../homebrew-waapi-assistant/controls";
+import { CardProps, CardRef, SafeCardRef } from "./header";
 import "./styles.css";
 
 const Card = forwardRef<CardRef, CardProps>(
@@ -23,9 +19,8 @@ const Card = forwardRef<CardRef, CardProps>(
     },
     ref
   ) => {
-    const [isfloatingAnimationStarted, setIsfloatingAnimationStarted] =
-      useState(false);
-    const shakingAnimationRef = useRef<Animation | undefined>();
+    const floatingAnimationRef = useRef<AnimationControls | undefined>();
+    const shakingAnimationRef = useRef<AnimationControls | undefined>();
     const cardContainerRef = useRef<HTMLDivElement | null>(null);
     const cardRef = useRef<HTMLDivElement | null>(null);
     const cardShadowRef = useRef<HTMLDivElement | null>(null);
@@ -43,65 +38,53 @@ const Card = forwardRef<CardRef, CardProps>(
       cardContainer: cardContainerRef.current,
       cardShadow: cardShadowRef.current,
       getId: () => id,
-      startFloatingAnimation: () => setIsfloatingAnimationStarted(true),
+      startFloatingAnimation: () => {
+        if (cardRef.current && cardFloating) {
+          const halfCardFloatingDelta = cardFloatingDelta / 2;
+
+          floatingAnimationRef.current = animate(
+            cardRef.current,
+            {
+              transform: [
+                `translateY(${-halfCardFloatingDelta}px)`,
+                `translateY(${halfCardFloatingDelta}px)`,
+              ],
+            },
+            {
+              duration: cardFloatingTime * 500,
+              iterations: Infinity,
+              direction: "alternate",
+              iterationStart: (id % 2) + 0.5, // 0.5 cuz it's when the card is at its init state
+            }
+          );
+
+          // TODO: update card shadow scaling to fit with the card's current height
+          // cardShadow.style.transform = `scale(${
+          //   1 + cardFloatingHeight * (1 - cardFloatingDelta / 10)
+          // })`;,
+        }
+      },
+      stopFloatingAnimation: () => {
+        floatingAnimationRef.current?.stop();
+      },
       startShakingAnimation: () => {
-        shakingAnimationRef.current = cardRef.current?.animate(
-          {
-            transform: ["rotate(10deg)", "rotate(-10deg)"],
-          },
-          {
-            iterations: Infinity,
-            direction: "alternate",
-            easing: "ease-in-out",
-            duration: cardShakingTime * 500,
-          }
-        );
+        if (cardRef.current)
+          shakingAnimationRef.current = animate(
+            cardRef.current,
+            {
+              transform: ["%s rotate(10deg)", "%s rotate(-10deg)"],
+            },
+            {
+              iterations: Infinity,
+              direction: "alternate",
+              duration: cardShakingTime * 500,
+            }
+          );
       },
       stopShakingAnimation: () => {
-        shakingAnimationRef.current?.cancel();
+        shakingAnimationRef.current?.stop();
       },
     }));
-
-    useEffect(() => {
-      let cardFloatingAnimation: Animation | undefined = undefined;
-
-      if (cardFloating && isfloatingAnimationStarted) {
-        const halfCardFloatingDelta = cardFloatingDelta / 2;
-
-        cardFloatingAnimation = cardRef.current?.animate(
-          [
-            {
-              transform: `translateY(${-halfCardFloatingDelta}px)`,
-            },
-            {
-              transform: `translateY(${halfCardFloatingDelta}px)`,
-            },
-          ],
-          {
-            duration: cardFloatingTime * 500,
-            iterations: Infinity,
-            direction: "alternate",
-            iterationStart: (id % 2) + 0.5, // 0.5 cuz it's when the card is at its init state
-            easing: "ease-in-out",
-          }
-        );
-
-        // TODO: update card shadow scaling to fit with the card's current height
-        // cardShadow.style.transform = `scale(${
-        //   1 + cardFloatingHeight * (1 - cardFloatingDelta / 10)
-        // })`;
-      }
-
-      return () => {
-        cardFloatingAnimation?.cancel();
-      };
-    }, [
-      cardFloating,
-      cardFloatingDelta,
-      cardFloatingTime,
-      id,
-      isfloatingAnimationStarted,
-    ]);
 
     return (
       <div ref={cardContainerRef} className="card-container" data-id={id}>
@@ -146,3 +129,7 @@ export const extractCardId = (el: Element): number | undefined => {
   const card = el.closest("[data-id]");
   return card instanceof HTMLElement ? Number(card.dataset["id"]) : undefined;
 };
+
+export const ensureCardRef = (
+  cardRef: CardRef | null | undefined
+): cardRef is SafeCardRef => !!cardRef?.elems;

@@ -14,15 +14,25 @@ export type CardRef = {
   startFloatingAnimation: () => void;
 
   /**
-   * Start floating animation using this function
+   * Stop floating animation using this function
+   */
+  stopFloatingAnimation: () => void;
+
+  /**
+   * Start shaking animation using this function
    */
   startShakingAnimation: () => void;
 
   /**
-   * Stop floating animation using this function
+   * Stop shaking animation using this function
    */
   stopShakingAnimation: () => void;
 };
+
+/**
+ * `CardRef` but the elems are not null
+ */
+export type SafeCardRef = CardRef & { elems: NonNullable<CardRef["elems"]> };
 
 export type ConfigCardProps = {
   /**
