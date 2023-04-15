@@ -9,7 +9,6 @@ export type AnimationControls = {
   finish: Animation["finish"];
   cancel: Animation["cancel"];
   reverse: Animation["reverse"];
-  commitStyles: Animation["commitStyles"];
   stop: () => void;
   finished: Promise<Animation[]>;
 };
@@ -62,10 +61,6 @@ export const createAnimationControls = (
     animations.forEach(animation => animation.reverse());
   };
 
-  const commitStyles = () => {
-    animations.forEach(animation => animation.commitStyles());
-  };
-
   const stop = () => {
     animations.forEach(animation => {
       animation.commitStyles();
@@ -82,7 +77,6 @@ export const createAnimationControls = (
     finish,
     cancel,
     reverse,
-    commitStyles,
     stop,
     finished,
   };
@@ -136,10 +130,6 @@ export const mergeAnimationControls = (
     controlObjs.forEach(controlObj => controlObj.reverse());
   };
 
-  const commitStyles = () => {
-    controlObjs.forEach(controlObj => controlObj.commitStyles());
-  };
-
   const stop = () => {
     controlObjs.forEach(controlObj => controlObj.stop());
   };
@@ -155,7 +145,6 @@ export const mergeAnimationControls = (
     finish,
     cancel,
     reverse,
-    commitStyles,
     stop,
     finished,
   };
