@@ -146,3 +146,95 @@ export const mergeAnimationControls = (
     finished,
   };
 };
+
+/**
+ * Create animation controls to controls a sequence of animations
+ *
+ * @param getCurrentControls callback to get the current running animation's controls
+ * @param stopControls callback to stop the animation sequence and get the last controls.
+ * set `skipToLast` to `true` to skip to the end of the animation sequence
+ * @returns an array contains:
+ *
+ * 1. A function to called when the animation sequence is stop
+ * 2. The sequence animation controls
+ */
+export const createSequenceAnimationControls = (
+  getCurrentControls: () => AnimationControls | null,
+  stopControls: (skipToLast: boolean) => AnimationControls | null
+): [
+  (lastControls: AnimationControls, finished: boolean) => void,
+  AnimationControls
+] => {
+  const listeners: Record<
+    keyof AnimationEventMap,
+    Parameters<AnimationControls["addEventListener"]>[1][]
+  > = {
+    cancel: [],
+    finish: [],
+    remove: [],
+  };
+
+  const addEventListener: AnimationControls["addEventListener"] = (
+    type,
+    listener
+  ) => {
+    listeners[type].push(listener);
+  };
+
+  const play = () => {
+    getCurrentControls()?.play();
+  };
+
+  const pause = () => {
+    getCurrentControls()?.pause();
+  };
+
+  const finish = () => {
+    stopControls(true)?.finish();
+  };
+
+  const cancel = () => {
+    stopControls(false)?.cancel();
+  };
+
+  const reverse = () => {
+    throw new Error("sequence reversing is currently not supported");
+  };
+
+  const stop = () => {
+    stopControls(false)?.stop();
+  };
+
+  const finished = new Promise<void>(resolve => {
+    listeners.finish.push(resolve);
+  });
+
+  const onSequenceStop = (
+    lastControls: AnimationControls,
+    finished: boolean
+  ) => {
+    if (finished) {
+      listeners.finish.forEach(listener => listener());
+    } else {
+      listeners.cancel.forEach(listener => listener());
+    }
+
+    lastControls.addEventListener("remove", () => {
+      listeners.remove.forEach(listener => listener());
+    });
+  };
+
+  return [
+    onSequenceStop,
+    {
+      addEventListener,
+      play,
+      pause,
+      finish,
+      cancel,
+      reverse,
+      stop,
+      finished,
+    },
+  ];
+};
