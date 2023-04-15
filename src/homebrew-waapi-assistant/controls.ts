@@ -1,8 +1,7 @@
 export type AnimationControls = {
   addEventListener<K extends keyof AnimationEventMap>(
     type: K,
-    listener: (evs: AnimationEventMap[K][]) => any,
-    options?: boolean | AddEventListenerOptions
+    listener: () => any
   ): void;
   play: Animation["play"];
   pause: Animation["pause"];
@@ -10,7 +9,7 @@ export type AnimationControls = {
   cancel: Animation["cancel"];
   reverse: Animation["reverse"];
   stop: () => void;
-  finished: Promise<Animation[]>;
+  finished: Promise<void>;
 };
 
 /**
@@ -23,15 +22,14 @@ export const createAnimationControls = (
 ): AnimationControls => {
   const addEventListener: AnimationControls["addEventListener"] = (
     type,
-    listener,
-    options
+    listener
   ) => {
     const promises: Promise<AnimationEventMap[typeof type]>[] = [];
 
     for (const animation of animations) {
       const promise: Promise<AnimationEventMap[typeof type]> = new Promise(
         resolve => {
-          animation.addEventListener(type, resolve, options);
+          animation.addEventListener(type, resolve);
         }
       );
 
@@ -68,7 +66,9 @@ export const createAnimationControls = (
     });
   };
 
-  const finished = Promise.all(animations.map(animation => animation.finished));
+  const finished = Promise.all(animations.map(animation => animation.finished))
+    .then(_ => {})
+    .catch(_ => {});
 
   return {
     addEventListener,
@@ -92,22 +92,19 @@ export const mergeAnimationControls = (
 ): AnimationControls => {
   const addEventListener: AnimationControls["addEventListener"] = (
     type,
-    listener,
-    options
+    listener
   ) => {
-    const promises: Promise<AnimationEventMap[typeof type][]>[] = [];
+    const promises: Promise<void>[] = [];
 
     for (const control of controlObjs) {
-      const promise: Promise<AnimationEventMap[typeof type][]> = new Promise(
-        resolve => {
-          control.addEventListener(type, resolve, options);
-        }
-      );
+      const promise: Promise<void> = new Promise(resolve => {
+        control.addEventListener(type, resolve);
+      });
 
       promises.push(promise);
     }
 
-    Promise.all(promises).then(res => listener(res.flat()));
+    Promise.all(promises).then(listener);
   };
 
   const play = () => {
@@ -136,7 +133,7 @@ export const mergeAnimationControls = (
 
   const finished = Promise.all(
     controlObjs.map(animation => animation.finished)
-  ).then(ev => ev.flat());
+  ).then(_ => {});
 
   return {
     addEventListener,
