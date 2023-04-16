@@ -198,6 +198,7 @@ function CardCarousel({
   const kineticEndTracking = useCallback(() => {
     const kineticTracking = kineticTrackingRef.current;
     clearInterval(kineticTracking.tracker);
+    kineticTrack();
 
     const velocityLowerBound = cardSnapping
       ? KINETIC_SNAPPING_VELOCITY_LOWER_BOUND
@@ -219,7 +220,7 @@ function CardCarousel({
       kineticTracking.state = "kinetic_scrolling";
       kineticTracking.lastTime = performance.now();
     }
-  }, [cardSingleAngle, cardSnapping, kineticRotateWeight]);
+  }, [cardSingleAngle, cardSnapping, kineticRotateWeight, kineticTrack]);
 
   // Interaction handling
   useEffect(() => {
