@@ -176,9 +176,10 @@ function CardCarousel({
     kineticTracking.lastPos = cursorRef.current.x;
 
     const newVel = deltaPos / ((1 + deltaTime) / 1000);
-
-    // simple moving average filter
-    kineticTracking.velocity = 0.8 * newVel + 0.2 * kineticTracking.velocity;
+    if (!(newVel === 0 && !cursorRef.current.pressed)) {
+      // simple moving average filter
+      kineticTracking.velocity = 0.8 * newVel + 0.2 * kineticTracking.velocity;
+    }
   }, []);
 
   const kineticStartTracking = useCallback(() => {
