@@ -58,22 +58,6 @@ export const animate = (
     )
   );
 
-  // Set first keyframe styles as elements' starting styles
-  elems.forEach((elem, i) => {
-    const keyframes = formattedKeyframes[i];
-    const firstKeyframe = extractKeyframe(keyframes, 0);
-    const secondKeyframe = extractKeyframe(keyframes, 1);
-
-    // If only one keyframe is presented, then don't set styles
-    if (Object.keys(secondKeyframe).length) {
-      for (const [key, value] of Object.entries(firstKeyframe)) {
-        if (key in elem.style) {
-          elem.style[key as any] = value + "";
-        }
-      }
-    }
-  });
-
   elems.forEach((elem, i) => {
     const animation = elem.animate(formattedKeyframes[i], {
       ...configObj,
@@ -103,26 +87,6 @@ export const normalizeAnimateConfig = (
   config: number | AdvancedAnimationOptions | undefined
 ): AdvancedAnimationOptions | undefined =>
   typeof config === "number" ? { duration: config } : config;
-
-/**
- * Extract a single keyframe from keyframes by index
- */
-const extractKeyframe = (
-  keyframes: Keyframe[] | PropertyIndexedKeyframes,
-  index: number
-): Keyframe => {
-  if (Array.isArray(keyframes)) {
-    return keyframes[index];
-  }
-
-  const keyframe: Keyframe = {};
-  for (const [k, v] of Object.entries(keyframes)) {
-    const value = Array.isArray(v) ? v[index] : [v][index];
-    if (value !== null && value !== undefined) keyframe[k] = value;
-  }
-
-  return keyframe;
-};
 
 /**
  * Quick function to normalize the delay value that supports StaggerFunction

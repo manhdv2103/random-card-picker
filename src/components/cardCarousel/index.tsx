@@ -35,6 +35,8 @@ import {
   throttle,
   transpose,
 } from "./utils";
+import { sequence } from "../../homebrew-waapi-assistant/sequence";
+import { AnimationControls } from "../../homebrew-waapi-assistant/controls";
 
 const windowStyle = window.getComputedStyle(document.body);
 
@@ -174,9 +176,10 @@ function CardCarousel({
     kineticTracking.lastPos = cursorRef.current.x;
 
     const newVel = deltaPos / ((1 + deltaTime) / 1000);
-
-    // simple moving average filter
-    kineticTracking.velocity = 0.8 * newVel + 0.2 * kineticTracking.velocity;
+    if (!(newVel === 0 && !cursorRef.current.pressed)) {
+      // simple moving average filter
+      kineticTracking.velocity = 0.8 * newVel + 0.2 * kineticTracking.velocity;
+    }
   }, []);
 
   const kineticStartTracking = useCallback(() => {
@@ -195,6 +198,7 @@ function CardCarousel({
   const kineticEndTracking = useCallback(() => {
     const kineticTracking = kineticTrackingRef.current;
     clearInterval(kineticTracking.tracker);
+    kineticTrack();
 
     const velocityLowerBound = cardSnapping
       ? KINETIC_SNAPPING_VELOCITY_LOWER_BOUND
@@ -216,7 +220,7 @@ function CardCarousel({
       kineticTracking.state = "kinetic_scrolling";
       kineticTracking.lastTime = performance.now();
     }
-  }, [cardSingleAngle, cardSnapping, kineticRotateWeight]);
+  }, [cardSingleAngle, cardSnapping, kineticRotateWeight, kineticTrack]);
 
   // Interaction handling
   useEffect(() => {
@@ -289,7 +293,7 @@ function CardCarousel({
 
   // Shuffling animation
   const runShufflingAnimation = useCallback(
-    async (transition?: boolean) => {
+    (transition?: boolean) => {
       if (!ensureCardsRef(cardsRef.current)) {
         return;
       }
@@ -342,44 +346,51 @@ function CardCarousel({
         }, [])
       );
 
-      if (transition) {
-        const transitionAnimation = branch(
-          cardsRef.current,
-          card => [
-            card.elems.cardContainer,
-            card.elems.card,
-            card.elems.cardShadow,
-          ],
-          [
-            [i => ({ transform: ["%s", keyframes[i][0].transform as string] })],
-            [{ transform: ["%s", "translateY(0px)"] }],
-            [{ opacity: ["%s", "0", "%k1^"], offset: [0, 0.3, 1] }],
-          ],
-          {
-            duration: TO_SHUFFLING_DURATION,
-            delay: stagger(TO_SHUFFLING_DELAY),
-          }
-        );
+      const controls = sequence([
+        () =>
+          transition && ensureCardsRef(cardsRef.current)
+            ? branch(
+                cardsRef.current,
+                card => [
+                  card.elems.cardContainer,
+                  card.elems.card,
+                  card.elems.cardShadow,
+                ],
+                [
+                  [
+                    i => ({
+                      transform: ["%s", keyframes[i][0].transform as string],
+                    }),
+                  ],
+                  [{ transform: ["%s", "translateY(0px)"] }],
+                  [{ opacity: ["%s", "0", "%k1^"], offset: [0, 0.3, 1] }],
+                ],
+                {
+                  duration: TO_SHUFFLING_DURATION,
+                  delay: stagger(TO_SHUFFLING_DELAY),
+                }
+              )
+            : null,
+        () =>
+          ensureCardsRef(cardsRef.current)
+            ? branch(
+                cardsRef.current,
+                card => [card.elems.cardContainer, card.elems.cardShadow],
+                [
+                  [
+                    i => keyframes[i],
+                    {
+                      duration: shufflingDuration * numberOfShuffling * 1000,
+                      easing: "linear",
+                    },
+                  ],
+                  [{ opacity: 0 }, 0], // turn off shadows
+                ]
+              )
+            : null,
+      ]);
 
-        await transitionAnimation.finished;
-      }
-
-      const animation = branch(
-        cardsRef.current,
-        card => [card.elems.cardContainer, card.elems.cardShadow],
-        [
-          [
-            i => keyframes[i],
-            {
-              duration: shufflingDuration * numberOfShuffling * 1000,
-              easing: "linear",
-            },
-          ],
-          [{ opacity: 0 }, 0], // turn off shadows
-        ]
-      );
-
-      return animation.finished;
+      return controls;
     },
     [
       dealingDeckDistanceFromCenter,
@@ -393,7 +404,7 @@ function CardCarousel({
 
   // Dealing animation
   const runDealingAnimation = useCallback(
-    async (transition?: boolean) => {
+    (transition?: boolean) => {
       if (!ensureCardsRef(cardsRef.current)) {
         return;
       }
@@ -412,53 +423,56 @@ function CardCarousel({
         translateZ(calc(${SHADOW_WIDTH} + %ipx + 1px))
       `;
 
-      if (transition) {
-        const transitionAnimation = animate(
-          cardsRef.current.map(card => card.elems.cardContainer),
-          { transform: ["%s", startState] },
-          TO_DEALING_DURATION
-        );
-
-        await transitionAnimation.finished;
-      }
-
-      const dealAnimation = branch(
-        cardsRef.current,
-        card => [card.elems.cardContainer, card.elems.cardShadow],
-        [
-          [
-            {
-              transform: [
-                startState,
-                `
+      const controls = sequence([
+        () =>
+          transition && ensureCardsRef(cardsRef.current)
+            ? animate(
+                cardsRef.current.map(card => card.elems.cardContainer),
+                { transform: ["%s", startState] },
+                TO_DEALING_DURATION
+              )
+            : null,
+        () =>
+          ensureCardsRef(cardsRef.current)
+            ? branch(
+                cardsRef.current,
+                card => [card.elems.cardContainer, card.elems.cardShadow],
+                [
+                  [
+                    {
+                      transform: [
+                        startState,
+                        `
                   %k1^
                   translateY(${direction * cardDistance}px)
                 `,
-                `
+                        `
                   %k1^
                   translateZ(${dealingFlyHeight}px)
                   rotatex(-${DEALING_FINISH_SKEW_DEGREE}deg)
                 `,
-                `
+                        `
                   rotateY(${-lastCarouselDegreeRef.current}deg)
                   rotateY(calc(%i * ${cardSingleAngle}deg))
                   translateZ(${cardDistance}px)
                   rotateY(calc(-%i * ${cardSingleAngle}deg + ${cardSkew}deg)
                 `,
-              ],
-            },
-          ],
-          [
-            {
-              opacity: ["0", SHADOW_OPACITY],
-              offset: [0.8],
-            },
-          ],
-        ],
-        animationOption
-      );
+                      ],
+                    },
+                  ],
+                  [
+                    {
+                      opacity: ["0", SHADOW_OPACITY],
+                      offset: [0.8],
+                    },
+                  ],
+                ],
+                animationOption
+              )
+            : null,
+      ]);
 
-      return dealAnimation.finished;
+      return controls;
     },
     [
       cardDistance,
@@ -473,20 +487,32 @@ function CardCarousel({
   );
 
   const runFirstAnimation = useCallback(
-    async (finishCallback: () => void) => {
+    (finishCallback: () => void) => {
+      let controls: AnimationControls | undefined;
+
       switch (firstAnimationRef.current.state) {
         case "running":
           if (firstAnimation) {
-            if (shufflingAnimation) await runShufflingAnimation();
-            await runDealingAnimation(shufflingAnimation);
+            controls = sequence([
+              () => (shufflingAnimation && runShufflingAnimation()) || null,
+              () => runDealingAnimation(shufflingAnimation) || null,
+            ]);
+
+            controls.addEventListener("finish", () => {
+              finishCallback();
+              firstAnimationRef.current.state = "done_running";
+            });
+          } else {
+            finishCallback();
+            firstAnimationRef.current.state = "done_running";
           }
 
-          finishCallback();
-          firstAnimationRef.current.state = "done_running";
           break;
         case "done_running":
           finishCallback();
       }
+
+      return controls?.cancel;
     },
     [
       firstAnimation,
@@ -692,8 +718,10 @@ function CardCarousel({
 
           if (redealingAnimation) {
             cardsRef.current.forEach(card => card?.stopFloatingAnimation());
-            await runShufflingAnimation(true);
-            await runDealingAnimation(true);
+            await sequence([
+              () => runShufflingAnimation(true) || null,
+              () => runDealingAnimation(true) || null,
+            ]).finished;
             cardsRef.current.forEach(card => card?.startFloatingAnimation());
             lastCarouselDegreeRef.current = 0;
           }
@@ -717,7 +745,7 @@ function CardCarousel({
   useEffect(() => {
     if (!carousel || !revealBarrier || !cardsRef.current.length) return;
 
-    runFirstAnimation(() => {
+    const cancelAnimation = runFirstAnimation(() => {
       runCardsFloatingAnimation();
 
       const tick: FrameRequestCallback = now => {
@@ -793,6 +821,7 @@ function CardCarousel({
     });
 
     return () => {
+      cancelAnimation?.();
       frameIdRef.current && cancelAnimationFrame(frameIdRef.current);
     };
   }, [
